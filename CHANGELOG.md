@@ -110,5 +110,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 - Phase-based combat tracker
 - Drag and drop functionality
-- Round reset functionality
+- Manual reset button (Återställ)
 

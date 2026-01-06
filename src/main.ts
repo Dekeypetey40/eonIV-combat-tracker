@@ -53,11 +53,7 @@ Hooks.once("ready", () => {
   setupPanelHooks();
   
   // Debug: Log module version to verify new code is loaded
-  console.log(`${MODULE_ID} | ========================================`);
-  console.log(`${MODULE_ID} | Module loaded - Version 0.3.2`);
-  console.log(`${MODULE_ID} | Updated: Increased max height, kept narrow width, engagement preserved when dragging within same phase`);
-  console.log(`${MODULE_ID} | EonDebug helpers available!`);
-  console.log(`${MODULE_ID} | ========================================`);
+  // Module loaded - EonDebug helpers available globally
   
   // Auto-open panel if there's an active combat and user can view it
   if (game.combat && canViewPanel()) {
@@ -75,24 +71,21 @@ Hooks.once("ready", () => {
     checkCombatants: () => {
       const combat = game.combat;
       if (!combat) {
-        console.warn(`${MODULE_ID} | No active combat`);
         return;
       }
       
-      console.log(`${MODULE_ID} | Combatant States:`, 
-        Array.from(combat.combatants).map(c => {
-          const flags = getFlags(c);
-          return {
-            id: c.id,
-            name: c.name,
-            phase: flags.phase,
-            order: flags.order,
-            meleeRole: flags.meleeRole,
-            engagedWith: flags.engagedWith,
-            reactionRoll: flags.reactionRoll,
-          };
-        })
-      );
+      return Array.from(combat.combatants).map(c => {
+        const flags = getFlags(c);
+        return {
+          id: c.id,
+          name: c.name,
+          phase: flags.phase,
+          order: flags.order,
+          meleeRole: flags.meleeRole,
+          engagedWith: flags.engagedWith,
+          reactionRoll: flags.reactionRoll,
+        };
+      });
     },
     
     /**
@@ -102,7 +95,6 @@ Hooks.once("ready", () => {
     moveToMelee: async (combatantIds?: string[]) => {
       const combat = game.combat;
       if (!combat) {
-        console.warn(`${MODULE_ID} | No active combat`);
         return;
       }
       
@@ -111,43 +103,37 @@ Hooks.once("ready", () => {
         : Array.from(combat.combatants);
       
       if (targets.length === 0) {
-        console.warn(`${MODULE_ID} | No valid combatants found`);
         return;
       }
-      
-      console.log(`${MODULE_ID} | Moving ${targets.length} combatants to melee phase...`);
       
       for (let i = 0; i < targets.length; i++) {
         const combatant = targets[i];
         await setPhase(combatant, "melee", (i + 1) * 1000, combat.round ?? 1);
-        console.log(`${MODULE_ID} | Moved ${combatant.name} to melee phase`);
       }
       
       // Re-render panel if open
       if (EonPhasesPanel.instance?.rendered) {
         EonPhasesPanel.instance.render();
       }
-      
-      console.log(`${MODULE_ID} | Done! Use EonDebug.checkCombatants() to verify`);
     },
     
     /**
      * Check button visibility in the rendered panel
      */
     checkButtons: () => {
-      if (!EonPhasesPanel.instance?.rendered) {
-        console.warn(`${MODULE_ID} | Panel is not open. Open it first with EonPhasesPanel.open()`);
+      const panel = EonPhasesPanel.instance;
+      if (!panel?.rendered) {
         return;
       }
       
-      const html = EonPhasesPanel.instance.element;
+      const html = panel.element;
       const reactionButtons = html.find("[data-action='roll-reaction']");
       const engageButtons = html.find("[data-action='engage']");
       const disengageButtons = html.find("[data-action='disengage']");
       const toggleRoleButtons = html.find("[data-action='toggle-role']");
       const meleeCombatants = html.find(".eon-combatant-row[data-phase='melee']");
       
-      console.log(`${MODULE_ID} | Button Visibility Check:`, {
+      return {
         reactionButtons: {
           total: reactionButtons.length,
           visible: reactionButtons.filter((_i, el) => $(el).is(":visible")).length,
@@ -167,34 +153,11 @@ Hooks.once("ready", () => {
         },
         meleeCombatants: meleeCombatants.length,
         canModify: canModifyPhases(),
-      });
-      
-      // Log each melee combatant's button state
-      meleeCombatants.each((_index, element) => {
-        const $row = $(element);
-        const combatantId = $row.data("combatant-id");
-        const combatantName = $row.find(".eon-combatant-name").text();
-        const hasEngageBtn = $row.find(".eon-engage-btn").length > 0;
-        const hasDisengageBtn = $row.find(".eon-disengage-btn").length > 0;
-        const hasToggleRoleBtn = $row.find(".eon-toggle-role-btn").length > 0;
-        const hasReactionBtn = $row.find(".eon-roll-reaction-btn").length > 0;
-        
-        console.log(`${MODULE_ID} | ${combatantName} (${combatantId}):`, {
-          hasReactionBtn,
-          hasEngageBtn,
-          hasDisengageBtn,
-          hasToggleRoleBtn,
-          isMelee: $row.data("phase") === "melee",
-        });
-      });
+      };
     },
   };
   
-  console.log(`${MODULE_ID} | Debug helpers available! Use:`);
-  console.log(`  - EonDebug.checkCombatants() - Check all combatant states`);
-  console.log(`  - EonDebug.moveToMelee() - Move all combatants to melee phase`);
-  console.log(`  - EonDebug.moveToMelee(['id1', 'id2']) - Move specific combatants`);
-  console.log(`  - EonDebug.checkButtons() - Check button visibility in panel`);
+      // Debug helpers available via EonDebug global object
 });
 
 /**

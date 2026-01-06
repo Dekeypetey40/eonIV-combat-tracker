@@ -26,21 +26,24 @@ Tall, narrow column layout showing all three combat phases plus an "Ej aktiv" (N
 - Drag combatants between phases
 - Reorder within phases to establish turn order
 - **Engagement status preserved** when dragging within the same phase
-
-### ✅ Automatic Round Reset
-When advancing to a new round, all combatants automatically reset to "Not Acting" - matching Eon IV's rule that phase selection happens each round.
+- Engagement status cleared when moving to a different phase
 
 ### ✅ Combat Tracker Integration
 - Opens directly from a button in Foundry's Combat Tracker sidebar
-- Auto-opens when combat starts (if enabled)
+- Auto-opens when combat is active on page load
+
+### ✅ Phase Persistence
+- Phase assignments persist across rounds (no automatic reset)
+- Use the "Återställ" (Reset) button to manually clear all assignments
+- Engagement status is preserved when dragging within the same phase
 
 ### ✅ Melee Engagement System
-- **Engage Combatants**: Dialog-based engagement system for melee combat
-- **Attacker/Defender Roles**: Automatic role assignment based on reaction rolls
+- **Engage Combatants**: Dialog-based engagement system for melee combat (radio button selection)
+- **Attacker/Defender Roles**: Roles can be manually toggled
 - **Team Engagements**: Support for multiple combatants engaging together (e.g., 2v1, 3v1)
 - **Visual Indicators**: Token images show who's engaged with whom
-- **Role Toggle**: Switch attacker/defender roles (switches both in 1v1 engagements)
-- **Join Existing Engagements**: New combatants can join ongoing melee engagements
+- **Role Toggle**: Switch attacker/defender roles (switches both combatants in 1v1 engagements)
+- **Join Existing Engagements**: New combatants can join ongoing melee engagements (defaults to attacker role)
 
 ## Requirements
 
@@ -83,8 +86,18 @@ EonPhasesPanel.open()
 1. All combatants start in the "Ej aktiv" column
 2. **Drag combatants** to their chosen phase column
 3. **Reorder** within a phase by dragging up/down
-4. Click **Återställ** (Reset) to clear all assignments
-5. Advancing the round automatically resets all assignments
+4. Click **Återställ** (Reset) to manually clear all assignments
+5. **Phase assignments persist across rounds** - use the Reset button when you want to clear them
+
+### Melee Engagement
+1. Place combatants in the "Närstridsfasen" (Melee) phase
+2. Click the **Engage** button on a combatant
+3. Select a target from the dialog (radio buttons)
+4. Combatants can join existing engagements (e.g., 2v1 scenarios)
+5. Use **Toggle Role** to switch attacker/defender (both switch in 1v1 engagements)
+6. Use **Disengage** to remove a combatant from their engagement group
+7. **Engagement status is preserved** when dragging within the melee phase
+8. **Engagement status is cleared** when moving a combatant to a different phase
 
 ### Keyboard Shortcut (Optional)
 You can create a macro with this script:

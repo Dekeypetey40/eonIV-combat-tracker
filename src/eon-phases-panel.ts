@@ -174,20 +174,7 @@ export class EonPhasesPanel extends Application {
 
     const canModify = canModifyPhases();
     
-    // Debug logging
-    console.log(`${MODULE_ID} | Panel data:`, {
-      hasCombat: true,
-      round: finalRound,
-      phaseCounts: phases.map(p => ({ id: p.id, count: p.count })),
-      canModify,
-      isGM: game.user?.isGM ?? false,
-      meleeCombatants: phases.find(p => p.id === "melee")?.combatants.map(c => ({
-        name: c.name,
-        isMelee: c.isMelee,
-        engagedWith: c.engagedWith,
-        meleeRole: c.meleeRole,
-      })) ?? [],
-    });
+    // Panel data prepared
     
     // Add canModify to each phase for easier template access
     const phasesWithModify = phases.map(phase => ({
@@ -210,51 +197,7 @@ export class EonPhasesPanel extends Application {
   activateListeners(html: JQuery): void {
     super.activateListeners(html);
     
-    // Debug: Log button visibility
-    const engageButtons = html.find("[data-action='engage']");
-    const meleeCombatants = html.find(".eon-combatant-row[data-phase='melee']");
-    
-    const combat = game.combat;
-    console.log(`${MODULE_ID} | Buttons found:`, {
-      engageButtons: engageButtons.length,
-      meleeCombatants: meleeCombatants.length,
-      canModify: canModifyPhases(),
-    });
-    
-    // Log each melee combatant's state (only if combat exists)
-    if (combat) {
-      meleeCombatants.each((_index, element) => {
-        const $row = $(element);
-        const combatantId = $row.data("combatant-id");
-        if (combatantId) {
-          const combatant = combat.combatants.get(combatantId);
-          if (combatant) {
-            const flags = getFlags(combatant);
-            const isEngaged = !!(flags.engagementGroup || flags.engagedWith);
-            const isGM = game.user?.isGM ?? false;
-            const isOwner = combatant.actor?.testUserPermission(game.user!, "OWNER") ?? false;
-            const canInteract = isGM || isOwner;
-            const canModify = canModifyPhases();
-            const controls = $row.find(".eon-combatant-controls");
-            const engageBtn = controls.find("[data-action='engage']");
-            
-            console.log(`${MODULE_ID} | Melee combatant ${combatant.name}:`, {
-              id: combatantId,
-              engaged: isEngaged,
-              engagementGroup: flags.engagementGroup,
-              engagedWith: flags.engagedWith,
-              canInteract: canInteract,
-              canModify: canModify,
-              isGM: isGM,
-              isOwner: isOwner,
-              hasControls: controls.length > 0,
-              hasEngageBtn: engageBtn.length > 0,
-              controlsHTML: controls.html()?.substring(0, 200),
-            });
-          }
-        }
-      });
-    }
+    // Event listeners set up
 
     // Fix any NaN display issues in the round number
     const roundElement = html.find("h2");
@@ -409,14 +352,12 @@ export class EonPhasesPanel extends Application {
     
     // Check if user can modify (based on settings)
     if (!canModifyPhases()) {
-      console.warn(`${MODULE_ID} | User cannot modify phase assignments`);
       return;
     }
     
     // Get combat
     const combat = game.combat;
     if (!combat) {
-      console.warn(`${MODULE_ID} | No active combat`);
       return;
     }
 
@@ -425,7 +366,6 @@ export class EonPhasesPanel extends Application {
     try {
       const data = event.dataTransfer?.getData("text/plain");
       if (!data) {
-        console.warn(`${MODULE_ID} | No drag data found`);
         return;
       }
       dragData = JSON.parse(data);
@@ -435,21 +375,18 @@ export class EonPhasesPanel extends Application {
     }
 
     if (dragData.type !== "Combatant" || !dragData.combatantId) {
-      console.warn(`${MODULE_ID} | Invalid drag data type`);
       return;
     }
 
     // Get the combatant being dragged
     const combatant = combat.combatants.get(dragData.combatantId);
     if (!combatant) {
-      console.warn(`${MODULE_ID} | Combatant not found: ${dragData.combatantId}`);
       return;
     }
 
     // Get target phase from drop zone
     const targetPhase = dropTarget.dataset.phase as EonPhase;
     if (!targetPhase) {
-      console.warn(`${MODULE_ID} | No phase data on drop target`);
       return;
     }
 

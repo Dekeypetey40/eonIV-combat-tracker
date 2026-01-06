@@ -13,31 +13,36 @@ Thank you for your interest in contributing to the Eon IV Combat Tracker! This d
 ### Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/Dekeypetey40/eonIV-combat-tracker.git
    cd eonIV-combat-tracker
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Build the module**
+
    ```bash
    npm run build
    ```
 
 4. **Link to Foundry** (for development)
-   
+
    Create a symbolic link from your Foundry modules folder to this project:
-   
+
    **Windows (PowerShell as Admin):**
+
    ```powershell
    New-Item -ItemType SymbolicLink -Path "C:\Users\<YOU>\AppData\Local\FoundryVTT\Data\modules\eon-combat-tracker" -Target "C:\path\to\eonIV-combat-tracker"
    ```
-   
+
    **macOS/Linux:**
+
    ```bash
    ln -s /path/to/eonIV-combat-tracker ~/.local/share/FoundryVTT/Data/modules/eon-combat-tracker
    ```
@@ -77,6 +82,7 @@ eon-combat-tracker/
 ## Making Changes
 
 1. **Create a branch** for your feature or fix:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -84,6 +90,7 @@ eon-combat-tracker/
 2. **Make your changes** and test them in Foundry
 
 3. **Commit with clear messages**:
+
    ```bash
    git commit -m "Add feature: description of what you added"
    ```
@@ -97,9 +104,11 @@ Before submitting a PR, please test:
 1. ✅ Module loads without errors in Foundry v13
 2. ✅ Panel opens from Combat Tracker button
 3. ✅ Drag and drop works for phase assignment
-4. ✅ Phase assignments reset on new round
-5. ✅ Works with multiple combatants
-6. ✅ Only GM can modify (players should see read-only view)
+4. ✅ Phase assignments persist across rounds (no automatic reset)
+5. ✅ Reset button clears all assignments
+6. ✅ Engagement status preserved when dragging within same phase
+7. ✅ Works with multiple combatants
+8. ✅ Only GM can modify (players should see read-only view)
 
 ## Reporting Issues
 
@@ -127,4 +136,3 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 - **Eon IV** is a trademark of Helmgast AB
 - This module is a fan project and is not affiliated with Helmgast AB
-

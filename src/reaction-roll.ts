@@ -17,7 +17,6 @@ import { EonPhase } from "./types";
 export async function rollReaction(combatant: Combatant): Promise<number | null> {
   const actor = combatant.actor;
   if (!actor) {
-    console.warn(`${MODULE_ID} | No actor found for combatant`);
     return null;
   }
 
@@ -59,14 +58,12 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
               // Try calling with the reaction attribute name
               const event = new MouseEvent("click", { bubbles: true, cancelable: true });
               await (sheet as any)[handlerName](event, "reaktion");
-              console.log(`${MODULE_ID} | Triggered reaction roll via handler ${handlerName} for ${actor.name}`);
               return 0; // System handles the roll
             } catch (e) {
               // Try without the attribute name
               try {
                 const event = new MouseEvent("click", { bubbles: true, cancelable: true });
                 await (sheet as any)[handlerName](event);
-                console.log(`${MODULE_ID} | Triggered reaction roll via handler ${handlerName} (no attr) for ${actor.name}`);
                 return 0;
               } catch (e2) {
                 // Continue to next handler
@@ -97,7 +94,6 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
               if (reactionButton.length > 0) {
                 // Trigger a click event on the button
                 reactionButton[0].click();
-                console.log(`${MODULE_ID} | Triggered reaction roll button click (${selector}) for ${actor.name}`);
                 return 0; // System handles the roll
               }
             } catch (e) {
@@ -115,7 +111,6 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
                 text.includes('slå reaktion') || title.includes('reaktion') || title.includes('reaction')) {
               try {
                 element.click();
-                console.log(`${MODULE_ID} | Triggered reaction roll by text match for ${actor.name}`);
                 return false; // Break the loop
               } catch (e) {
                 // Continue searching
@@ -229,7 +224,6 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
             console.error(`${MODULE_ID} | Original formula: ${formula}`);
           }
         } else {
-          console.warn(`${MODULE_ID} | Formula "${normalizedFormula}" doesn't match valid roll pattern`);
         }
       }
     }
@@ -250,8 +244,6 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
     }
 
     // If we get here, we couldn't find a way to roll
-    console.warn(`${MODULE_ID} | Could not find Reaction roll method for ${actor.name}`);
-    console.warn(`${MODULE_ID} | Please use the Reaction roll button in the character sheet.`);
     ui.notifications.warn(`Could not find Reaction roll method for ${actor.name}. Please use the character sheet to roll Reaction.`);
     return null;
   } catch (error) {
