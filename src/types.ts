@@ -35,6 +35,10 @@ export const DEFAULT_FLAGS: EonCombatantFlags = {
   phase: "none",
   order: 0,
   round: 0,
+  meleeRole: null,
+  reactionRoll: null,
+  engagedWith: null, // DEPRECATED - kept for backward compatibility
+  engagementGroup: null,
 };
 
 /**
