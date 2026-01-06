@@ -7,6 +7,8 @@
 
 import { MODULE_ID, PHASES, EonPhase } from "./types";
 import { getCombatantsByPhase, getFlags, setPhase, resetAllPhases } from "./flags";
+import { canViewPanel, canModifyPhases } from "./settings";
+import { rollReaction, rollReactionForPhase } from "./reaction-roll";
 
 /**
  * The main panel for managing combat phases in Eon IV
@@ -24,8 +26,8 @@ export class EonPhasesPanel extends Application {
       title: "Eon IV - Stridsfaser",
       template: `modules/${MODULE_ID}/templates/phases-panel.hbs`,
       classes: ["eon-phases-panel"],
-      width: 700,
-      height: 500,
+      width: 400,
+      height: 600,
       resizable: true,
       minimizable: true,
       dragDrop: [
@@ -92,11 +94,38 @@ export class EonPhasesPanel extends Application {
       };
     });
 
+    // Get round number - Foundry stores it in combat.round
+    // Round can be null/undefined before combat starts, or 0-based in some cases
+    let roundNumber: number;
+    const rawRound = combat.round;
+    
+    if (typeof rawRound === "number" && !isNaN(rawRound) && isFinite(rawRound)) {
+      // Foundry v13: round is 0-based, so add 1 for display
+      // But some systems might already be 1-based, so check if it's 0
+      roundNumber = rawRound === 0 ? 1 : rawRound;
+    } else {
+      // Fallback: if round is null/undefined/NaN, default to 1
+      roundNumber = 1;
+    }
+    
+    // Ensure it's a valid integer - use parseInt to ensure it's a primitive number
+    roundNumber = Math.max(1, Math.floor(roundNumber));
+    
+    // Force to primitive number (not Number object)
+    const roundDisplay = parseInt(String(roundNumber), 10);
+    
+    // Final validation - if somehow still invalid, default to 1
+    const finalRound = (isNaN(roundDisplay) || !isFinite(roundDisplay)) ? 1 : roundDisplay;
+    
+    // Debug logging
+    console.log(`${MODULE_ID} | Combat round value:`, rawRound, "→ Calculated:", roundNumber, "→ Final:", finalRound, "Type:", typeof finalRound);
+
     return {
       hasCombat: true,
-      round: combat.round ?? 1,
+      round: finalRound,
       phases,
       isGM: game.user?.isGM ?? false,
+      canModify: canModifyPhases(),
     };
   }
 
@@ -106,8 +135,59 @@ export class EonPhasesPanel extends Application {
   activateListeners(html: JQuery): void {
     super.activateListeners(html);
 
+    // Fix any NaN display issues in the round number
+    const roundElement = html.find("h2");
+    if (roundElement.length) {
+      const roundText = roundElement.text();
+      if (roundText.includes("NaN") || roundText.includes("NAN")) {
+        const combat = game.combat;
+        const round = combat?.round ?? 1;
+        const displayRound = (typeof round === "number" && !isNaN(round)) ? round : 1;
+        roundElement.text(`Runda ${displayRound}`);
+        console.log(`${MODULE_ID} | Fixed NaN in round display, set to:`, displayRound);
+      }
+    }
+
     // Clear all button
     html.find("[data-action='clear-all']").on("click", this._onClearAll.bind(this));
+
+    // Collapsible phase sections
+    html.find("[data-action='toggle-phase']").on("click", (event) => {
+      event.stopPropagation();
+      const toggle = $(event.currentTarget);
+      const section = toggle.closest(".eon-phase-section");
+      section.toggleClass("collapsed");
+    });
+
+    // Reaction roll buttons
+    html.find("[data-action='roll-reaction']").on("click", this._onRollReaction.bind(this));
+    html.find("[data-action='roll-phase-reaction']").on("click", this._onRollPhaseReaction.bind(this));
+    
+    // Hide phase reaction button if only 0-1 combatants
+    html.find(".eon-roll-phase-btn").each((_index, element) => {
+      const btn = $(element);
+      const count = parseInt(btn.data("count") || "0", 10);
+      if (count <= 1) {
+        btn.hide();
+      }
+    });
+
+    // Check if user can modify (based on settings)
+    if (!canModifyPhases()) return;
+
+    // Attach drag handlers to combatant rows
+    html.find(".eon-combatant-row[draggable='true']").each((_index, element) => {
+      const row = element as HTMLElement;
+      row.addEventListener("dragstart", this._onDragStart.bind(this));
+    });
+
+    // Attach drop zone handlers to phase lists
+    html.find(".eon-combatant-list").each((_index, element) => {
+      const list = element as HTMLElement;
+      list.addEventListener("dragover", this._onDragOver.bind(this));
+      list.addEventListener("dragleave", this._onDragLeave.bind(this));
+      list.addEventListener("drop", this._onDrop.bind(this));
+    });
   }
 
   /**
@@ -117,7 +197,10 @@ export class EonPhasesPanel extends Application {
     const target = event.currentTarget as HTMLElement;
     const combatantId = target.dataset.combatantId;
     
-    if (!combatantId) return;
+    if (!combatantId) {
+      event.preventDefault();
+      return;
+    }
 
     // Set drag data
     const dragData = {
@@ -125,10 +208,15 @@ export class EonPhasesPanel extends Application {
       combatantId: combatantId,
     };
 
-    event.dataTransfer?.setData("text/plain", JSON.stringify(dragData));
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
+    }
     
     // Add visual feedback
     target.classList.add("dragging");
+    
+    console.log(`${MODULE_ID} | Started dragging combatant: ${combatantId}`);
   }
 
   /**
@@ -136,6 +224,12 @@ export class EonPhasesPanel extends Application {
    */
   _onDragOver(event: DragEvent): void {
     event.preventDefault();
+    event.stopPropagation();
+    
+    // Allow drop
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
+    }
     
     const target = event.currentTarget as HTMLElement;
     target.classList.add("drag-over");
@@ -145,8 +239,20 @@ export class EonPhasesPanel extends Application {
    * Handle drag leave event
    */
   _onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
     const target = event.currentTarget as HTMLElement;
-    target.classList.remove("drag-over");
+    // Only remove if we're actually leaving the element (not just moving to a child)
+    const rect = target.getBoundingClientRect();
+    if (
+      event.clientX < rect.left ||
+      event.clientX > rect.right ||
+      event.clientY < rect.top ||
+      event.clientY > rect.bottom
+    ) {
+      target.classList.remove("drag-over");
+    }
   }
 
   /**
@@ -154,37 +260,59 @@ export class EonPhasesPanel extends Application {
    */
   async _onDrop(event: DragEvent): Promise<void> {
     event.preventDefault();
+    event.stopPropagation();
     
     // Remove visual feedback
     const dropTarget = event.currentTarget as HTMLElement;
     dropTarget.classList.remove("drag-over");
     
-    // Only GMs can modify
-    if (!game.user?.isGM) return;
+    // Check if user can modify (based on settings)
+    if (!canModifyPhases()) {
+      console.warn(`${MODULE_ID} | User cannot modify phase assignments`);
+      return;
+    }
     
     // Get combat
     const combat = game.combat;
-    if (!combat) return;
+    if (!combat) {
+      console.warn(`${MODULE_ID} | No active combat`);
+      return;
+    }
 
     // Parse drag data
     let dragData;
     try {
       const data = event.dataTransfer?.getData("text/plain");
-      if (!data) return;
+      if (!data) {
+        console.warn(`${MODULE_ID} | No drag data found`);
+        return;
+      }
       dragData = JSON.parse(data);
-    } catch {
+    } catch (error) {
+      console.error(`${MODULE_ID} | Failed to parse drag data:`, error);
       return;
     }
 
-    if (dragData.type !== "Combatant" || !dragData.combatantId) return;
+    if (dragData.type !== "Combatant" || !dragData.combatantId) {
+      console.warn(`${MODULE_ID} | Invalid drag data type`);
+      return;
+    }
 
     // Get the combatant being dragged
     const combatant = combat.combatants.get(dragData.combatantId);
-    if (!combatant) return;
+    if (!combatant) {
+      console.warn(`${MODULE_ID} | Combatant not found: ${dragData.combatantId}`);
+      return;
+    }
 
     // Get target phase from drop zone
     const targetPhase = dropTarget.dataset.phase as EonPhase;
-    if (!targetPhase) return;
+    if (!targetPhase) {
+      console.warn(`${MODULE_ID} | No phase data on drop target`);
+      return;
+    }
+
+    console.log(`${MODULE_ID} | Moving ${combatant.name} to ${targetPhase} phase`);
 
     // Calculate new order based on drop position
     const order = this._calculateDropOrder(event, dropTarget, targetPhase);
@@ -196,6 +324,9 @@ export class EonPhasesPanel extends Application {
     document.querySelectorAll(".dragging").forEach((el) => {
       el.classList.remove("dragging");
     });
+
+    // Re-render the panel to show the update
+    this.render();
   }
 
   /**
@@ -252,9 +383,54 @@ export class EonPhasesPanel extends Application {
     event.preventDefault();
     
     const combat = game.combat;
-    if (!combat || !game.user?.isGM) return;
+    if (!combat || !canModifyPhases()) return;
 
     await resetAllPhases(combat);
+    this.render();
+  }
+
+  /**
+   * Handle rolling Reaction for a single combatant
+   */
+  async _onRollReaction(event: JQuery.ClickEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (!canModifyPhases()) {
+      ui.notifications.warn("You don't have permission to roll reactions");
+      return;
+    }
+
+    const combatantId = $(event.currentTarget).data("combatant-id");
+    const combat = game.combat;
+    if (!combat || !combatantId) return;
+
+    const combatant = combat.combatants.get(combatantId);
+    if (!combatant) return;
+
+    await rollReaction(combatant);
+    // Re-render to show any updates
+    this.render();
+  }
+
+  /**
+   * Handle rolling Reaction for all combatants in a phase
+   */
+  async _onRollPhaseReaction(event: JQuery.ClickEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (!canModifyPhases()) {
+      ui.notifications.warn("You don't have permission to roll reactions");
+      return;
+    }
+
+    const phase = $(event.currentTarget).data("phase") as EonPhase;
+    const combat = game.combat;
+    if (!combat || !phase) return;
+
+    await rollReactionForPhase(combat, phase);
+    // Re-render to show sorted order
     this.render();
   }
 }

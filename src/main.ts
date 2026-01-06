@@ -12,6 +12,7 @@
 
 import { MODULE_ID } from "./types";
 import { EonPhasesPanel, setupPanelHooks } from "./eon-phases-panel";
+import { registerSettings, canViewPanel } from "./settings";
 
 // Make panel accessible globally for debugging and macros
 declare global {
@@ -28,6 +29,9 @@ declare global {
  */
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | Initializing Eon IV Combat Tracker`);
+  
+  // Register module settings
+  registerSettings();
   
   // Expose panel class globally for debugging/macros
   // Users can open the panel with: EonPhasesPanel.open()
@@ -59,15 +63,28 @@ Hooks.once("ready", () => {
  * This hook fires when the Combat Tracker sidebar tab renders.
  * We inject a button that opens our Eon Phases panel.
  */
-Hooks.on("renderCombatTracker", (app: Application, html: JQuery) => {
-  // Only add the button for GMs
-  if (!game.user?.isGM) return;
+Hooks.on("renderCombatTracker", (app: Application, html: JQuery | HTMLElement) => {
+  // Check if user can view the panel (based on settings)
+  if (!canViewPanel()) {
+    console.log(`${MODULE_ID} | Skipping button - user cannot view panel`);
+    return;
+  }
   
   // Only add if there's an active combat
-  if (!game.combat) return;
+  if (!game.combat) {
+    console.log(`${MODULE_ID} | Skipping button - no active combat`);
+    return;
+  }
+  
+  // Convert html to jQuery if it's not already
+  const $html = html instanceof jQuery ? html : $(html);
   
   // Check if button already exists (prevent duplicates on re-render)
-  if (html.find("#eon-phases-button").length > 0) return;
+  if ($html.find("#eon-phases-button").length > 0) {
+    return;
+  }
+  
+  console.log(`${MODULE_ID} | Adding button to Combat Tracker`);
   
   // Create the button
   const button = $(`
@@ -86,15 +103,28 @@ Hooks.on("renderCombatTracker", (app: Application, html: JQuery) => {
   });
   
   // Insert the button into the combat tracker header
-  const header = html.find(".combat-tracker-header");
+  // Try multiple selectors for compatibility with different Foundry versions
+  const header = $html.find(".combat-tracker-header, .combat-header");
+  
   if (header.length) {
-    // Add to the encounter controls
-    const controls = header.find(".encounter-controls");
+    // Try to find encounter controls first
+    const controls = header.find(".encounter-controls, .combat-controls");
     if (controls.length) {
       controls.append(button);
+      console.log(`${MODULE_ID} | Button added to encounter controls`);
     } else {
-      // Fallback: add after the header
-      header.after(button);
+      // Fallback: add directly to header
+      header.append(button);
+      console.log(`${MODULE_ID} | Button added to header`);
+    }
+  } else {
+    // Last resort: add to the top of the combat tracker
+    const tracker = $html.find(".combat-tracker, .sidebar-tab");
+    if (tracker.length) {
+      tracker.prepend(button);
+      console.log(`${MODULE_ID} | Button added to combat tracker (fallback)`);
+    } else {
+      console.warn(`${MODULE_ID} | Could not find Combat Tracker element to add button`);
     }
   }
 });

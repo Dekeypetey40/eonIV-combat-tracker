@@ -5,7 +5,7 @@
     {{!-- Header with round info and controls --}}
     <header class="eon-phases-header">
       <h2>Runda {{round}}</h2>
-      {{#if isGM}}
+      {{#if canModify}}
         <div class="eon-header-controls">
           <button type="button" data-action="clear-all" title="Återställ alla faser">
             <i class="fas fa-undo"></i> Återställ
@@ -14,14 +14,29 @@
       {{/if}}
     </header>
 
-    {{!-- Phase columns --}}
-    <div class="eon-phases-grid">
+    {{!-- Phase list (vertical stack) --}}
+    <div class="eon-phases-list">
       {{#each phases}}
-        <div class="eon-phase-column" data-phase="{{id}}">
+        <div class="eon-phase-section" data-phase="{{id}}">
           <div class="eon-phase-header">
-            <i class="fas {{icon}}"></i>
-            <span class="eon-phase-title">{{label}}</span>
-            <span class="eon-phase-count">({{count}})</span>
+            <div class="eon-phase-header-left" data-action="toggle-phase">
+              <i class="fas {{icon}}"></i>
+              <span class="eon-phase-title">{{label}}</span>
+              <span class="eon-phase-count">{{count}}</span>
+            </div>
+            <div class="eon-phase-header-right">
+              {{#if ../canModify}}
+                <button type="button" 
+                        class="eon-roll-phase-btn" 
+                        data-action="roll-phase-reaction" 
+                        data-phase="{{id}}"
+                        data-count="{{count}}"
+                        title="Slå Reaktion för alla i denna fas">
+                  <i class="fas fa-dice"></i> Reaktion
+                </button>
+              {{/if}}
+              <i class="fas fa-chevron-down eon-phase-toggle" data-action="toggle-phase"></i>
+            </div>
           </div>
           
           <ul class="eon-combatant-list" data-phase="{{id}}">
@@ -31,6 +46,15 @@
                   draggable="true">
                 <img class="eon-combatant-img" src="{{img}}" alt="{{name}}">
                 <span class="eon-combatant-name">{{name}}</span>
+                {{#if ../canModify}}
+                  <button type="button" 
+                          class="eon-roll-reaction-btn" 
+                          data-action="roll-reaction" 
+                          data-combatant-id="{{id}}"
+                          title="Slå Reaktion">
+                    <i class="fas fa-dice"></i>
+                  </button>
+                {{/if}}
                 {{#if defeated}}
                   <i class="fas fa-skull eon-defeated-icon" title="Besegrad"></i>
                 {{/if}}

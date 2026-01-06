@@ -30,6 +30,13 @@
   background: transparent;
 }
 
+/* Make panel narrower by default */
+.eon-phases-panel.window-app {
+  width: 400px;
+  min-width: 350px;
+  max-width: 500px;
+}
+
 .eon-phases-container {
   display: flex;
   flex-direction: column;
@@ -72,79 +79,135 @@
   color: #1a1a2e;
 }
 
-/* ===== Phase Grid ===== */
-.eon-phases-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+/* ===== Phase List (Vertical Stack) ===== */
+.eon-phases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
 }
 
-/* ===== Phase Column ===== */
-.eon-phase-column {
+/* ===== Phase Section ===== */
+.eon-phase-section {
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.25);
   border-radius: 4px;
   overflow: hidden;
+  border-left: 3px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.eon-phase-section[data-phase="ranged"] {
+  border-left-color: #4ecdc4;
+}
+
+.eon-phase-section[data-phase="melee"] {
+  border-left-color: #ff6b6b;
+}
+
+.eon-phase-section[data-phase="mystic"] {
+  border-left-color: #a855f7;
+}
+
+.eon-phase-section[data-phase="none"] {
+  border-left-color: #6b7280;
+}
+
+.eon-phase-section.collapsed .eon-combatant-list {
+  display: none;
+}
+
+.eon-phase-section.collapsed .eon-phase-toggle {
+  transform: rotate(-90deg);
 }
 
 .eon-phase-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.4rem;
-  padding: 0.5rem;
+  padding: 0.4rem 0.6rem;
   background: rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  user-select: none;
+  transition: background 0.2s ease;
 }
 
-.eon-phase-header i {
-  font-size: 1rem;
+.eon-phase-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  cursor: pointer;
+}
+
+.eon-phase-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.eon-phase-header:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.eon-phase-header i.fas:not(.eon-phase-toggle) {
+  font-size: 0.9rem;
   width: 1.2rem;
   text-align: center;
 }
 
 /* Phase-specific colors */
-.eon-phase-column[data-phase="ranged"] .eon-phase-header {
+.eon-phase-section[data-phase="ranged"] .eon-phase-header {
   color: #4ecdc4;
-  border-bottom-color: #4ecdc4;
 }
 
-.eon-phase-column[data-phase="melee"] .eon-phase-header {
+.eon-phase-section[data-phase="melee"] .eon-phase-header {
   color: #ff6b6b;
-  border-bottom-color: #ff6b6b;
 }
 
-.eon-phase-column[data-phase="mystic"] .eon-phase-header {
+.eon-phase-section[data-phase="mystic"] .eon-phase-header {
   color: #a855f7;
-  border-bottom-color: #a855f7;
 }
 
-.eon-phase-column[data-phase="none"] .eon-phase-header {
+.eon-phase-section[data-phase="none"] .eon-phase-header {
   color: #6b7280;
-  border-bottom-color: #6b7280;
+}
+
+.eon-phase-toggle {
+  margin-left: auto;
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
 }
 
 .eon-phase-title {
   font-weight: 600;
   font-size: 0.85rem;
+  flex: 1;
 }
 
 .eon-phase-count {
-  margin-left: auto;
-  font-size: 0.75rem;
-  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 /* ===== Combatant List ===== */
 .eon-combatant-list {
   list-style: none;
   margin: 0;
-  padding: 0.25rem;
-  flex: 1;
+  padding: 0.2rem;
+  max-height: 200px;
   overflow-y: auto;
-  min-height: 100px;
+  transition: max-height 0.3s ease;
 }
 
 .eon-combatant-row {
@@ -190,6 +253,40 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #e8e8e8;
+}
+
+/* ===== Reaction Roll Buttons ===== */
+.eon-roll-reaction-btn,
+.eon-roll-phase-btn {
+  background: rgba(201, 162, 39, 0.2);
+  border: 1px solid #c9a227;
+  color: #c9a227;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
+.eon-roll-reaction-btn {
+  padding: 0.15rem 0.3rem;
+  min-width: auto;
+}
+
+.eon-roll-reaction-btn:hover,
+.eon-roll-phase-btn:hover {
+  background: #c9a227;
+  color: #1a1a2e;
+}
+
+.eon-roll-reaction-btn i,
+.eon-roll-phase-btn i {
+  font-size: 0.7rem;
 }
 
 .eon-defeated-icon {
