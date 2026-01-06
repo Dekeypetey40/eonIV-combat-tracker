@@ -2,10 +2,11 @@
  * Eon Phases Panel
  * 
  * An ApplicationV2 window that displays combatants organized by phase.
+ * Supports drag-and-drop for reordering and phase assignment.
  */
 
 import { MODULE_ID, PHASES, EonPhase } from "./types";
-import { getCombatantsByPhase, getFlags } from "./flags";
+import { getCombatantsByPhase, getFlags, setPhase } from "./flags";
 
 /**
  * The main panel for managing combat phases in Eon IV
@@ -13,6 +14,9 @@ import { getCombatantsByPhase, getFlags } from "./flags";
 export class EonPhasesPanel extends Application {
   /** Singleton instance */
   static instance: EonPhasesPanel | null = null;
+  
+  /** Drag and drop controller */
+  private _dragDrop: DragDrop[] = [];
 
   static get defaultOptions(): ApplicationOptions {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -24,6 +28,12 @@ export class EonPhasesPanel extends Application {
       height: 500,
       resizable: true,
       minimizable: true,
+      dragDrop: [
+        {
+          dragSelector: ".eon-combatant-row",
+          dropSelector: ".eon-combatant-list",
+        },
+      ],
     }) as ApplicationOptions;
   }
 
@@ -98,8 +108,141 @@ export class EonPhasesPanel extends Application {
 
     // Clear all button
     html.find("[data-action='clear-all']").on("click", this._onClearAll.bind(this));
+  }
 
-    // Future: drag and drop listeners will be added here
+  /**
+   * Handle the start of a drag event
+   */
+  _onDragStart(event: DragEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    const combatantId = target.dataset.combatantId;
+    
+    if (!combatantId) return;
+
+    // Set drag data
+    const dragData = {
+      type: "Combatant",
+      combatantId: combatantId,
+    };
+
+    event.dataTransfer?.setData("text/plain", JSON.stringify(dragData));
+    
+    // Add visual feedback
+    target.classList.add("dragging");
+  }
+
+  /**
+   * Handle drag over event (for visual feedback)
+   */
+  _onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    
+    const target = event.currentTarget as HTMLElement;
+    target.classList.add("drag-over");
+  }
+
+  /**
+   * Handle drag leave event
+   */
+  _onDragLeave(event: DragEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    target.classList.remove("drag-over");
+  }
+
+  /**
+   * Handle drop event
+   */
+  async _onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    
+    // Remove visual feedback
+    const dropTarget = event.currentTarget as HTMLElement;
+    dropTarget.classList.remove("drag-over");
+    
+    // Only GMs can modify
+    if (!game.user?.isGM) return;
+    
+    // Get combat
+    const combat = game.combat;
+    if (!combat) return;
+
+    // Parse drag data
+    let dragData;
+    try {
+      const data = event.dataTransfer?.getData("text/plain");
+      if (!data) return;
+      dragData = JSON.parse(data);
+    } catch {
+      return;
+    }
+
+    if (dragData.type !== "Combatant" || !dragData.combatantId) return;
+
+    // Get the combatant being dragged
+    const combatant = combat.combatants.get(dragData.combatantId);
+    if (!combatant) return;
+
+    // Get target phase from drop zone
+    const targetPhase = dropTarget.dataset.phase as EonPhase;
+    if (!targetPhase) return;
+
+    // Calculate new order based on drop position
+    const order = this._calculateDropOrder(event, dropTarget, targetPhase);
+
+    // Update the combatant's flags
+    await setPhase(combatant, targetPhase, order, combat.round ?? 1);
+
+    // Remove dragging class from source
+    document.querySelectorAll(".dragging").forEach((el) => {
+      el.classList.remove("dragging");
+    });
+  }
+
+  /**
+   * Calculate the order value for a dropped combatant
+   */
+  private _calculateDropOrder(
+    event: DragEvent,
+    dropTarget: HTMLElement,
+    targetPhase: EonPhase
+  ): number {
+    const combat = game.combat;
+    if (!combat) return 0;
+
+    // Get all combatants currently in the target phase
+    const combatantsByPhase = getCombatantsByPhase(combat);
+    const phaseList = combatantsByPhase.get(targetPhase) || [];
+    
+    if (phaseList.length === 0) {
+      return 1000; // First item
+    }
+
+    // Find the element we're dropping on/near
+    const dropY = event.clientY;
+    const rows = dropTarget.querySelectorAll(".eon-combatant-row");
+    
+    let insertIndex = phaseList.length; // Default to end
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] as HTMLElement;
+      const rect = row.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      
+      if (dropY < midpoint) {
+        insertIndex = i;
+        break;
+      }
+    }
+
+    // Calculate order value between neighbors
+    const prevOrder = insertIndex > 0 
+      ? getFlags(phaseList[insertIndex - 1]).order 
+      : 0;
+    const nextOrder = insertIndex < phaseList.length 
+      ? getFlags(phaseList[insertIndex]).order 
+      : prevOrder + 2000;
+
+    return (prevOrder + nextOrder) / 2;
   }
 
   /**
@@ -156,4 +299,3 @@ export function setupPanelHooks(): void {
     }
   });
 }
-
