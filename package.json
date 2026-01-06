@@ -1,23 +1,29 @@
 {
-    "name": "eon-combat-tracker",
-    "version": "0.1.0",
-    "description": "A phase-based combat tracker for Eon IV in Foundry VTT",
-    "type": "module",
-    "scripts": {
-        "dev": "vite build --watch",
-        "build": "vite build",
-        "typecheck": "tsc --noEmit"
-    },
-    "keywords": [
-        "foundry-vtt",
-        "eon-rpg",
-        "combat-tracker"
-    ],
-    "author": "Dekeypetey40",
-    "license": "MIT",
-    "devDependencies": {
-        "@league-of-foundry-developers/foundry-vtt-types": "^9.280.0",
-        "typescript": "^5.3.3",
-        "vite": "^5.0.12"
-    }
+  "name": "eon-combat-tracker",
+  "version": "0.1.0",
+  "description": "A phase-based combat tracker for Eon IV in Foundry VTT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "foundry-vtt",
+    "eon-rpg",
+    "combat-tracker"
+  ],
+  "author": "Dekeypetey40",
+  "license": "MIT",
+  "devDependencies": {
+    "@league-of-foundry-developers/foundry-vtt-types": "^9.280.0",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vitest": "^4.0.16"
+  }
 }
+
