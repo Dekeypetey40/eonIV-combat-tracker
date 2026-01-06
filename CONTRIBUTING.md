@@ -108,7 +108,7 @@ Before submitting a PR, please test:
 5. ✅ Reset button clears all assignments
 6. ✅ Engagement status preserved when dragging within same phase
 7. ✅ Works with multiple combatants
-8. ✅ Only GM can modify (players should see read-only view)
+8. ✅ All players can modify by default (GM-only mode is optional setting)
 
 ## Reporting Issues
 

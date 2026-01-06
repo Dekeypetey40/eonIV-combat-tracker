@@ -50,6 +50,15 @@ Tall, narrow column layout showing all three combat phases plus an "Ej aktiv" (N
 - **Foundry VTT** v13 or higher
 - **[Eon RPG System](https://foundryvtt.com/packages/eon-rpg)** by JohanFalt
 
+## Module Settings
+
+The module includes one configurable setting:
+
+- **GM Only Mode** (default: disabled)
+  - When **disabled** (default): All players can view and modify the combat tracker
+  - When **enabled**: Only GMs can view and modify the combat tracker
+  - Found in: **World Settings** → **Module Settings** → **Eon IV Combat Tracker**
+
 ## Installation
 
 ### Method 1: Foundry Package Browser (Recommended)

@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Button clickability - removed disabled states, buttons only visible when clickable
-- Permission checks - GM can always click, non-GM only for owned tokens
+- Permission checks - buttons visible and clickable based on ownership/GM status
 
 ## [0.1.4] - 2025-01-XX
 

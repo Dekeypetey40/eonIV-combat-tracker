@@ -115,7 +115,7 @@ For full integration testing, you need to test the module in Foundry VTT.
 
 #### Basic Functionality
 - [ ] Module loads without console errors
-- [ ] Button appears in Combat Tracker header (GM only)
+- [ ] Button appears in Combat Tracker header (all players by default, or GM only if setting enabled)
 - [ ] Clicking button opens Eon Phases panel
 - [ ] Panel shows "Ingen aktiv strid" when no combat
 
@@ -129,13 +129,13 @@ For full integration testing, you need to test the module in Foundry VTT.
 
 #### Round Handling
 - [ ] Advance round (GM clicks "Next Round")
-- [ ] All combatants reset to "Ej aktiv" column
-- [ ] Previous round assignments don't persist
+- [ ] Phase assignments persist across rounds (no automatic reset)
+- [ ] Use "Återställ" button to manually clear assignments
 
 #### Multi-User
-- [ ] Players see the panel (read-only)
-- [ ] Players cannot drag-drop (GM only)
-- [ ] GM changes reflect on player screens
+- [ ] Players can see and modify the panel by default
+- [ ] Players can drag-drop by default (GM-only mode is optional setting)
+- [ ] Changes reflect on all user screens in real-time
 
 #### Edge Cases
 - [ ] Adding combatant during combat - appears in "Ej aktiv"
