@@ -1,8 +1,248 @@
 /**
  * Eon IV Combat Tracker Styles
  * 
- * Styles for the phase-based combat tracker panel.
+ * A dark, atmospheric theme fitting the Eon IV aesthetic.
  */
 
-/* Panel will be styled in a later commit */
+/* ===== Panel Container ===== */
+.eon-phases-panel {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #e8e8e8;
+}
 
+.eon-phases-panel .window-content {
+  padding: 0;
+  background: transparent;
+}
+
+.eon-phases-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+/* ===== Header ===== */
+.eon-phases-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border-bottom: 2px solid #c9a227;
+}
+
+.eon-phases-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #c9a227;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.eon-header-controls button {
+  background: rgba(201, 162, 39, 0.2);
+  border: 1px solid #c9a227;
+  color: #c9a227;
+  padding: 0.3rem 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.eon-header-controls button:hover {
+  background: #c9a227;
+  color: #1a1a2e;
+}
+
+/* ===== Phase Grid ===== */
+.eon-phases-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ===== Phase Column ===== */
+.eon-phase-column {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.eon-phase-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.eon-phase-header i {
+  font-size: 1rem;
+  width: 1.2rem;
+  text-align: center;
+}
+
+/* Phase-specific colors */
+.eon-phase-column[data-phase="ranged"] .eon-phase-header {
+  color: #4ecdc4;
+  border-bottom-color: #4ecdc4;
+}
+
+.eon-phase-column[data-phase="melee"] .eon-phase-header {
+  color: #ff6b6b;
+  border-bottom-color: #ff6b6b;
+}
+
+.eon-phase-column[data-phase="mystic"] .eon-phase-header {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
+}
+
+.eon-phase-column[data-phase="none"] .eon-phase-header {
+  color: #6b7280;
+  border-bottom-color: #6b7280;
+}
+
+.eon-phase-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.eon-phase-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ===== Combatant List ===== */
+.eon-combatant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 100px;
+}
+
+.eon-combatant-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  margin-bottom: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.eon-combatant-row:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.eon-combatant-row:active {
+  cursor: grabbing;
+}
+
+.eon-combatant-row.defeated {
+  opacity: 0.5;
+}
+
+.eon-combatant-row.defeated .eon-combatant-name {
+  text-decoration: line-through;
+}
+
+.eon-combatant-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  object-fit: cover;
+}
+
+.eon-combatant-name {
+  flex: 1;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eon-defeated-icon {
+  color: #ef4444;
+  font-size: 0.75rem;
+}
+
+.eon-combatant-empty {
+  padding: 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.8rem;
+}
+
+/* ===== No Combat State ===== */
+.eon-no-combat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.eon-no-combat i {
+  font-size: 2rem;
+  color: #c9a227;
+}
+
+.eon-no-combat p {
+  margin: 0;
+}
+
+.eon-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ===== Drag and Drop States ===== */
+.eon-combatant-row.dragging {
+  opacity: 0.5;
+}
+
+.eon-combatant-list.drag-over {
+  background: rgba(201, 162, 39, 0.1);
+  outline: 2px dashed #c9a227;
+  outline-offset: -2px;
+}
+
+.eon-combatant-row.drop-target {
+  border-top: 2px solid #c9a227;
+}
+
+/* ===== Scrollbar ===== */
+.eon-combatant-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.eon-combatant-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.eon-combatant-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.eon-combatant-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,57 @@
+{{!-- Eon IV Combat Tracker - Phases Panel --}}
+
+<div class="eon-phases-container">
+  {{#if hasCombat}}
+    {{!-- Header with round info and controls --}}
+    <header class="eon-phases-header">
+      <h2>Runda {{round}}</h2>
+      {{#if isGM}}
+        <div class="eon-header-controls">
+          <button type="button" data-action="clear-all" title="Återställ alla faser">
+            <i class="fas fa-undo"></i> Återställ
+          </button>
+        </div>
+      {{/if}}
+    </header>
+
+    {{!-- Phase columns --}}
+    <div class="eon-phases-grid">
+      {{#each phases}}
+        <div class="eon-phase-column" data-phase="{{id}}">
+          <div class="eon-phase-header">
+            <i class="fas {{icon}}"></i>
+            <span class="eon-phase-title">{{label}}</span>
+            <span class="eon-phase-count">({{count}})</span>
+          </div>
+          
+          <ul class="eon-combatant-list" data-phase="{{id}}">
+            {{#each combatants}}
+              <li class="eon-combatant-row {{#if defeated}}defeated{{/if}}" 
+                  data-combatant-id="{{id}}"
+                  draggable="true">
+                <img class="eon-combatant-img" src="{{img}}" alt="{{name}}">
+                <span class="eon-combatant-name">{{name}}</span>
+                {{#if defeated}}
+                  <i class="fas fa-skull eon-defeated-icon" title="Besegrad"></i>
+                {{/if}}
+              </li>
+            {{else}}
+              <li class="eon-combatant-empty">
+                <em>Ingen i denna fas</em>
+              </li>
+            {{/each}}
+          </ul>
+        </div>
+      {{/each}}
+    </div>
+
+  {{else}}
+    {{!-- No active combat --}}
+    <div class="eon-no-combat">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>Ingen aktiv strid.</p>
+      <p class="eon-hint">Starta en strid för att använda stridshanteraren.</p>
+    </div>
+  {{/if}}
+</div>
+
