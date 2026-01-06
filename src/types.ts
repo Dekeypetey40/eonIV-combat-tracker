@@ -13,6 +13,10 @@ export interface EonCombatantFlags {
   order: number;
   /** Which combat round this assignment belongs to */
   round: number;
+  /** For melee: role as "attacker" or "defender" */
+  meleeRole?: "attacker" | "defender" | null;
+  /** Reaction roll result (for sorting) */
+  reactionRoll?: number | null;
 }
 
 /**

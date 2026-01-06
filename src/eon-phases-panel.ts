@@ -8,7 +8,7 @@
 import { MODULE_ID, PHASES, EonPhase } from "./types";
 import { getCombatantsByPhase, getFlags, setPhase, resetAllPhases } from "./flags";
 import { canViewPanel, canModifyPhases } from "./settings";
-import { rollReaction, rollReactionForPhase } from "./reaction-roll";
+import { rollReactionForCombatant } from "./reaction-roll";
 
 /**
  * The main panel for managing combat phases in Eon IV
@@ -83,13 +83,20 @@ export class EonPhasesPanel extends Application {
       
       return {
         ...phaseConfig,
-        combatants: combatants.map((c) => ({
-          id: c.id,
-          name: c.name,
-          img: c.token?.texture?.src || c.actor?.img || "icons/svg/mystery-man.svg",
-          defeated: c.isDefeated,
-          flags: getFlags(c),
-        })),
+        combatants: combatants.map((c) => {
+          const flags = getFlags(c);
+          return {
+            id: c.id,
+            name: c.name,
+            img: c.token?.texture?.src || c.actor?.img || "icons/svg/mystery-man.svg",
+            defeated: c.isDefeated,
+            flags: flags,
+            meleeRole: flags.meleeRole,
+            isAttacker: flags.meleeRole === "attacker",
+            isDefender: flags.meleeRole === "defender",
+            reactionRoll: flags.reactionRoll,
+          };
+        }),
         count: combatants.length,
       };
     });
@@ -159,18 +166,8 @@ export class EonPhasesPanel extends Application {
       section.toggleClass("collapsed");
     });
 
-    // Reaction roll buttons
+    // Reaction roll buttons (individual only)
     html.find("[data-action='roll-reaction']").on("click", this._onRollReaction.bind(this));
-    html.find("[data-action='roll-phase-reaction']").on("click", this._onRollPhaseReaction.bind(this));
-    
-    // Hide phase reaction button if only 0-1 combatants
-    html.find(".eon-roll-phase-btn").each((_index, element) => {
-      const btn = $(element);
-      const count = parseInt(btn.data("count") || "0", 10);
-      if (count <= 1) {
-        btn.hide();
-      }
-    });
 
     // Check if user can modify (based on settings)
     if (!canModifyPhases()) return;
@@ -408,29 +405,8 @@ export class EonPhasesPanel extends Application {
     const combatant = combat.combatants.get(combatantId);
     if (!combatant) return;
 
-    await rollReaction(combatant);
-    // Re-render to show any updates
-    this.render();
-  }
-
-  /**
-   * Handle rolling Reaction for all combatants in a phase
-   */
-  async _onRollPhaseReaction(event: JQuery.ClickEvent): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    if (!canModifyPhases()) {
-      ui.notifications.warn("You don't have permission to roll reactions");
-      return;
-    }
-
-    const phase = $(event.currentTarget).data("phase") as EonPhase;
-    const combat = game.combat;
-    if (!combat || !phase) return;
-
-    await rollReactionForPhase(combat, phase);
-    // Re-render to show sorted order
+    await rollReactionForCombatant(combatant);
+    // Re-render to show any updates (order, attacker/defender)
     this.render();
   }
 }

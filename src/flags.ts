@@ -13,11 +13,15 @@ export function getFlags(combatant: Combatant): EonCombatantFlags {
   const phase = combatant.getFlag(MODULE_ID, "phase") as EonPhase | undefined;
   const order = combatant.getFlag(MODULE_ID, "order") as number | undefined;
   const round = combatant.getFlag(MODULE_ID, "round") as number | undefined;
+  const meleeRole = combatant.getFlag(MODULE_ID, "meleeRole") as "attacker" | "defender" | null | undefined;
+  const reactionRoll = combatant.getFlag(MODULE_ID, "reactionRoll") as number | null | undefined;
 
   return {
     phase: phase ?? DEFAULT_FLAGS.phase,
     order: order ?? DEFAULT_FLAGS.order,
     round: round ?? DEFAULT_FLAGS.round,
+    meleeRole: meleeRole ?? null,
+    reactionRoll: reactionRoll ?? null,
   };
 }
 
@@ -44,6 +48,8 @@ export async function resetAllPhases(combat: Combat): Promise<void> {
     [`flags.${MODULE_ID}.phase`]: "none",
     [`flags.${MODULE_ID}.order`]: 0,
     [`flags.${MODULE_ID}.round`]: combat.round ?? 0,
+    [`flags.${MODULE_ID}.meleeRole`]: null,
+    [`flags.${MODULE_ID}.reactionRoll`]: null,
   }));
   
   await combat.updateEmbeddedDocuments("Combatant", updates);

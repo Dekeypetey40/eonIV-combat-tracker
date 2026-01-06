@@ -25,25 +25,24 @@
               <span class="eon-phase-count">{{count}}</span>
             </div>
             <div class="eon-phase-header-right">
-              {{#if ../canModify}}
-                <button type="button" 
-                        class="eon-roll-phase-btn" 
-                        data-action="roll-phase-reaction" 
-                        data-phase="{{id}}"
-                        data-count="{{count}}"
-                        title="Slå Reaktion för alla i denna fas">
-                  <i class="fas fa-dice"></i> Reaktion
-                </button>
-              {{/if}}
               <i class="fas fa-chevron-down eon-phase-toggle" data-action="toggle-phase"></i>
             </div>
           </div>
           
           <ul class="eon-combatant-list" data-phase="{{id}}">
             {{#each combatants}}
-              <li class="eon-combatant-row {{#if defeated}}defeated{{/if}}" 
+              <li class="eon-combatant-row {{#if defeated}}defeated{{/if}} {{#if meleeRole}}melee-{{meleeRole}}{{/if}}" 
                   data-combatant-id="{{id}}"
+                  data-phase="{{../id}}"
                   draggable="true">
+                {{#if meleeRole}}
+                  {{#if isAttacker}}
+                    <i class="fas fa-sword eon-melee-role-icon eon-attacker-icon" title="Anfallare"></i>
+                  {{/if}}
+                  {{#if isDefender}}
+                    <i class="fas fa-shield eon-melee-role-icon eon-defender-icon" title="Försvarare"></i>
+                  {{/if}}
+                {{/if}}
                 <img class="eon-combatant-img" src="{{img}}" alt="{{name}}">
                 <span class="eon-combatant-name">{{name}}</span>
                 {{#if ../canModify}}
@@ -54,6 +53,9 @@
                           title="Slå Reaktion">
                     <i class="fas fa-dice"></i>
                   </button>
+                {{/if}}
+                {{#if reactionRoll}}
+                  <span class="eon-reaction-roll" title="Reaktionsslag: {{reactionRoll}}">{{reactionRoll}}</span>
                 {{/if}}
                 {{#if defeated}}
                   <i class="fas fa-skull eon-defeated-icon" title="Besegrad"></i>

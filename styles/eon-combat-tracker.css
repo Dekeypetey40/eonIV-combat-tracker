@@ -220,6 +220,7 @@
   border-radius: 3px;
   cursor: grab;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .eon-combatant-row:hover {
@@ -237,6 +238,64 @@
 
 .eon-combatant-row.defeated .eon-combatant-name {
   text-decoration: line-through;
+}
+
+/* Melee role indicators */
+.eon-melee-role-icon {
+  font-size: 0.9rem;
+  width: 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.eon-attacker-icon {
+  color: #ff6b6b;
+}
+
+.eon-defender-icon {
+  color: #4ecdc4;
+}
+
+/* Visual grouping for engaged melee combatants */
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-attacker {
+  border-left: 3px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.05);
+}
+
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-defender {
+  border-left: 3px solid #4ecdc4;
+  background: rgba(78, 205, 196, 0.05);
+}
+
+/* Group engaged combatants - defender appears right after attacker */
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-attacker {
+  margin-bottom: 0.1rem;
+}
+
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-attacker + .eon-combatant-row.melee-defender {
+  margin-top: -0.1rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 0.4rem;
+  margin-left: 0.5rem;
+  border-radius: 0 3px 3px 0;
+}
+
+/* Add spacing between different melee engagements */
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-defender + .eon-combatant-row.melee-attacker,
+.eon-combatant-list[data-phase="melee"] .eon-combatant-row.melee-defender + .eon-combatant-row:not(.melee-attacker):not(.melee-defender) {
+  margin-top: 0.5rem;
+}
+
+/* Reaction roll display */
+.eon-reaction-roll {
+  background: rgba(201, 162, 39, 0.2);
+  color: #c9a227;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 .eon-combatant-img {
@@ -257,35 +316,29 @@
 }
 
 /* ===== Reaction Roll Buttons ===== */
-.eon-roll-reaction-btn,
-.eon-roll-phase-btn {
+.eon-roll-reaction-btn {
   background: rgba(201, 162, 39, 0.2);
   border: 1px solid #c9a227;
   color: #c9a227;
-  padding: 0.2rem 0.4rem;
+  padding: 0.15rem 0.3rem;
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.7rem;
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  white-space: nowrap;
+  justify-content: center;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  flex-shrink: 0;
 }
 
-.eon-roll-reaction-btn {
-  padding: 0.15rem 0.3rem;
-  min-width: auto;
-}
-
-.eon-roll-reaction-btn:hover,
-.eon-roll-phase-btn:hover {
+.eon-roll-reaction-btn:hover {
   background: #c9a227;
   color: #1a1a2e;
 }
 
-.eon-roll-reaction-btn i,
-.eon-roll-phase-btn i {
+.eon-roll-reaction-btn i {
   font-size: 0.7rem;
 }
 
