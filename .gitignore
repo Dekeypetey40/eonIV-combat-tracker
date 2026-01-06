@@ -25,3 +25,9 @@ npm-debug.log*
 .env
 .env.local
 
+# Local development/testing docs (not for repo)
+HOW_TO_PUBLISH.md
+CREATE_TEST_TOKENS.md
+FOUNDRY_MACRO_CREATE_TEST_ACTORS.js
+QUICK_TEST.md
+
