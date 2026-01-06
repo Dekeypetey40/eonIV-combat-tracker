@@ -47,7 +47,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", () => {
   console.log(`${MODULE_ID} | Eon IV Combat Tracker ready`);
   
-  // Set up hooks for panel updates and round resets
+  // Set up hooks for panel updates
   setupPanelHooks();
   
   // Log usage hint for GMs
