@@ -2,7 +2,22 @@
  * Eon IV Combat Tracker Styles
  * 
  * A dark, atmospheric theme fitting the Eon IV aesthetic.
+ * 
+ * @module eon-combat-tracker
+ * @author Dekeypetey40
+ * @license MIT
  */
+
+/* ===== Combat Tracker Button ===== */
+#eon-phases-button {
+  color: #c9a227;
+  transition: all 0.2s ease;
+}
+
+#eon-phases-button:hover {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
+}
 
 /* ===== Panel Container ===== */
 .eon-phases-panel {
