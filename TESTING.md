@@ -2,6 +2,41 @@
 
 This document explains how to test the Eon IV Combat Tracker module.
 
+## Prerequisites for Manual Testing
+
+> **⚠️ License Required:** Manual testing requires a **licensed copy of [Foundry VTT](https://foundryvtt.com/)**. Foundry VTT is paid software ($50 USD one-time purchase). You can purchase a license at https://foundryvtt.com/
+>
+> **Note:** Any Foundry license tier works - Standard, Professional, or Enterprise. The module works the same regardless of license type.
+
+### Additional Requirements
+
+- **Foundry VTT** v13 or higher (with active license)
+- The **[Eon RPG System](https://foundryvtt.com/packages/eon-rpg)** installed
+- A world created using the Eon RPG system
+- At least one scene with tokens for combat testing
+
+### Quick Start (5 minutes)
+
+1. **Build the module:**
+   ```bash
+   npm run build
+   ```
+
+2. **Copy to Foundry modules folder:**
+   - Windows: `%LOCALAPPDATA%\FoundryVTT\Data\modules\eon-combat-tracker`
+   - macOS: `~/Library/Application Support/FoundryVTT/Data/modules/eon-combat-tracker`
+   - Linux: `~/.local/share/FoundryVTT/Data/modules/eon-combat-tracker`
+
+3. **In Foundry VTT:**
+   - Open a world using the Eon RPG system
+   - Settings → Manage Modules → Enable "Eon IV Combat Tracker"
+   - Start a combat encounter
+   - Click the button in Combat Tracker header
+
+See the detailed sections below for comprehensive testing.
+
+---
+
 ## Automated Tests (Vitest)
 
 We use [Vitest](https://vitest.dev/) for unit testing the module logic.
