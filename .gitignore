@@ -31,3 +31,7 @@ CREATE_TEST_TOKENS.md
 FOUNDRY_MACRO_CREATE_TEST_ACTORS.js
 QUICK_TEST.md
 
+# Local Foundry copy scripts (useful locally, not needed in repo)
+copy-to-foundry.ps1
+copy-to-foundry.sh
+

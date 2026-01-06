@@ -26,8 +26,8 @@ export class EonPhasesPanel extends Application {
       title: "Eon IV - Stridsfaser",
       template: `modules/${MODULE_ID}/templates/phases-panel.hbs`,
       classes: ["eon-phases-panel"],
-      width: 400,
-      height: 600,
+      width: 350,
+      height: "auto",
       resizable: true,
       minimizable: true,
       dragDrop: [
@@ -79,12 +79,51 @@ export class EonPhasesPanel extends Application {
 
     // Transform combatants into template-friendly format
     const phases = PHASES.map((phaseConfig) => {
-      const combatants = combatantsByPhase.get(phaseConfig.id) || [];
+      let combatants = combatantsByPhase.get(phaseConfig.id) || [];
+      
+      // For melee phase, group engaged combatants together
+      if (phaseConfig.id === "melee") {
+        combatants = this._sortMeleeCombatants(combatants);
+      }
       
       return {
         ...phaseConfig,
         combatants: combatants.map((c) => {
           const flags = getFlags(c);
+          // Find engagement group members
+          let engagementGroupMembers: string[] = [];
+          let engagedWithName: string | null = null;
+          
+          let engagementGroupMemberImages: Array<{ id: string; name: string; img: string }> = [];
+          
+          if (flags.engagementGroup) {
+            // Get all combatants in the same engagement group with their images
+            const combatantsByPhase = getCombatantsByPhase(combat);
+            const meleeCombatants = combatantsByPhase.get("melee") || [];
+            engagementGroupMemberImages = meleeCombatants
+              .filter(other => {
+                const otherFlags = getFlags(other);
+                return otherFlags.engagementGroup === flags.engagementGroup && other.id !== c.id;
+              })
+              .map(other => ({
+                id: other.id,
+                name: other.name,
+                img: other.token?.texture?.src || other.actor?.img || "icons/svg/mystery-man.svg",
+              }));
+            // Keep text list for backward compatibility
+            engagementGroupMembers = engagementGroupMemberImages.map(m => m.name);
+          } else if (flags.engagedWith) {
+            // Backward compatibility: show old engagedWith
+            const engagedCombatant = combat.combatants.get(flags.engagedWith);
+            engagedWithName = engagedCombatant?.name ?? null;
+          }
+          
+          // Check if current user can interact with this combatant
+          // GM can always interact, non-GM can only interact with owned tokens
+          const isGM = game.user?.isGM ?? false;
+          const isOwner = c.actor?.testUserPermission(game.user!, "OWNER") ?? false;
+          const canInteract = isGM || isOwner;
+          
           return {
             id: c.id,
             name: c.name,
@@ -95,6 +134,15 @@ export class EonPhasesPanel extends Application {
             isAttacker: flags.meleeRole === "attacker",
             isDefender: flags.meleeRole === "defender",
             reactionRoll: flags.reactionRoll,
+            engagedWith: flags.engagedWith,
+            engagedWithName: engagedWithName,
+            engagementGroup: flags.engagementGroup,
+            engagementGroupMembers: engagementGroupMembers,
+            engagementGroupMemberImages: engagementGroupMemberImages,
+            phase: phaseConfig.id,
+            isMelee: phaseConfig.id === "melee", // Add explicit flag for template
+            canInteract: canInteract, // Can this user interact with this combatant?
+            canModify: canModifyPhases(), // Add canModify to each combatant for template access
           };
         }),
         count: combatants.length,
@@ -123,16 +171,36 @@ export class EonPhasesPanel extends Application {
     
     // Final validation - if somehow still invalid, default to 1
     const finalRound = (isNaN(roundDisplay) || !isFinite(roundDisplay)) ? 1 : roundDisplay;
+
+    const canModify = canModifyPhases();
     
     // Debug logging
-    console.log(`${MODULE_ID} | Combat round value:`, rawRound, "→ Calculated:", roundNumber, "→ Final:", finalRound, "Type:", typeof finalRound);
-
+    console.log(`${MODULE_ID} | Panel data:`, {
+      hasCombat: true,
+      round: finalRound,
+      phaseCounts: phases.map(p => ({ id: p.id, count: p.count })),
+      canModify,
+      isGM: game.user?.isGM ?? false,
+      meleeCombatants: phases.find(p => p.id === "melee")?.combatants.map(c => ({
+        name: c.name,
+        isMelee: c.isMelee,
+        engagedWith: c.engagedWith,
+        meleeRole: c.meleeRole,
+      })) ?? [],
+    });
+    
+    // Add canModify to each phase for easier template access
+    const phasesWithModify = phases.map(phase => ({
+      ...phase,
+      canModify, // Add canModify to phase level for ../canModify to work
+    }));
+    
     return {
       hasCombat: true,
       round: finalRound,
-      phases,
+      phases: phasesWithModify,
       isGM: game.user?.isGM ?? false,
-      canModify: canModifyPhases(),
+      canModify,
     };
   }
 
@@ -141,6 +209,52 @@ export class EonPhasesPanel extends Application {
    */
   activateListeners(html: JQuery): void {
     super.activateListeners(html);
+    
+    // Debug: Log button visibility
+    const engageButtons = html.find("[data-action='engage']");
+    const meleeCombatants = html.find(".eon-combatant-row[data-phase='melee']");
+    
+    const combat = game.combat;
+    console.log(`${MODULE_ID} | Buttons found:`, {
+      engageButtons: engageButtons.length,
+      meleeCombatants: meleeCombatants.length,
+      canModify: canModifyPhases(),
+    });
+    
+    // Log each melee combatant's state (only if combat exists)
+    if (combat) {
+      meleeCombatants.each((_index, element) => {
+        const $row = $(element);
+        const combatantId = $row.data("combatant-id");
+        if (combatantId) {
+          const combatant = combat.combatants.get(combatantId);
+          if (combatant) {
+            const flags = getFlags(combatant);
+            const isEngaged = !!(flags.engagementGroup || flags.engagedWith);
+            const isGM = game.user?.isGM ?? false;
+            const isOwner = combatant.actor?.testUserPermission(game.user!, "OWNER") ?? false;
+            const canInteract = isGM || isOwner;
+            const canModify = canModifyPhases();
+            const controls = $row.find(".eon-combatant-controls");
+            const engageBtn = controls.find("[data-action='engage']");
+            
+            console.log(`${MODULE_ID} | Melee combatant ${combatant.name}:`, {
+              id: combatantId,
+              engaged: isEngaged,
+              engagementGroup: flags.engagementGroup,
+              engagedWith: flags.engagedWith,
+              canInteract: canInteract,
+              canModify: canModify,
+              isGM: isGM,
+              isOwner: isOwner,
+              hasControls: controls.length > 0,
+              hasEngageBtn: engageBtn.length > 0,
+              controlsHTML: controls.html()?.substring(0, 200),
+            });
+          }
+        }
+      });
+    }
 
     // Fix any NaN display issues in the round number
     const roundElement = html.find("h2");
@@ -151,7 +265,6 @@ export class EonPhasesPanel extends Application {
         const round = combat?.round ?? 1;
         const displayRound = (typeof round === "number" && !isNaN(round)) ? round : 1;
         roundElement.text(`Runda ${displayRound}`);
-        console.log(`${MODULE_ID} | Fixed NaN in round display, set to:`, displayRound);
       }
     }
 
@@ -167,15 +280,47 @@ export class EonPhasesPanel extends Application {
     });
 
     // Reaction roll buttons (individual only)
-    html.find("[data-action='roll-reaction']").on("click", this._onRollReaction.bind(this));
+    // Reaction roll buttons removed
+    
+    // Toggle attacker/defender buttons (melee only)
+    html.find("[data-action='toggle-role']").on("click", this._onToggleRole.bind(this));
+    
+    // Engage/disengage buttons (melee only)
+    html.find("[data-action='engage']").on("click", this._onEngage.bind(this));
+    html.find("[data-action='disengage']").on("click", this._onDisengage.bind(this));
+    
 
     // Check if user can modify (based on settings)
     if (!canModifyPhases()) return;
 
     // Attach drag handlers to combatant rows
+    // But prevent drag when clicking on buttons or controls
     html.find(".eon-combatant-row[draggable='true']").each((_index, element) => {
       const row = element as HTMLElement;
-      row.addEventListener("dragstart", this._onDragStart.bind(this));
+      
+      // Prevent drag when clicking on buttons or controls
+      row.addEventListener("mousedown", (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("button, .eon-combatant-controls")) {
+          // Temporarily disable dragging on the row
+          row.draggable = false;
+          // Re-enable after a short delay
+          setTimeout(() => {
+            row.draggable = true;
+          }, 100);
+        }
+      });
+      
+      row.addEventListener("dragstart", (event: DragEvent) => {
+        // Don't start drag if clicking on a button or control
+        const target = event.target as HTMLElement;
+        if (target.closest("button, .eon-combatant-controls")) {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+        this._onDragStart(event);
+      });
     });
 
     // Attach drop zone handlers to phase lists
@@ -213,7 +358,6 @@ export class EonPhasesPanel extends Application {
     // Add visual feedback
     target.classList.add("dragging");
     
-    console.log(`${MODULE_ID} | Started dragging combatant: ${combatantId}`);
   }
 
   /**
@@ -309,13 +453,28 @@ export class EonPhasesPanel extends Application {
       return;
     }
 
-    console.log(`${MODULE_ID} | Moving ${combatant.name} to ${targetPhase} phase`);
 
     // Calculate new order based on drop position
     const order = this._calculateDropOrder(event, dropTarget, targetPhase);
 
+    // Get current flags before updating
+    const flags = getFlags(combatant);
+    const currentPhase = flags.phase;
+    
     // Update the combatant's flags
     await setPhase(combatant, targetPhase, order, combat.round ?? 1);
+    
+    // Only clear engagement when moving to a DIFFERENT phase
+    // If staying in the same phase (especially melee), preserve engagement status
+    if (currentPhase !== targetPhase) {
+      // Moving to a different phase - clear engagement
+      if (flags.engagementGroup || flags.engagedWith) {
+        await combatant.setFlag(MODULE_ID, "engagementGroup", null);
+        await combatant.setFlag(MODULE_ID, "engagedWith", null);
+        await combatant.setFlag(MODULE_ID, "meleeRole", null);
+      }
+    }
+    // If staying in the same phase, engagement and role are preserved automatically
 
     // Remove dragging class from source
     document.querySelectorAll(".dragging").forEach((el) => {
@@ -386,18 +545,14 @@ export class EonPhasesPanel extends Application {
     this.render();
   }
 
+
   /**
-   * Handle rolling Reaction for a single combatant
+   * Handle toggling attacker/defender role
    */
-  async _onRollReaction(event: JQuery.ClickEvent): Promise<void> {
+  async _onToggleRole(event: JQuery.ClickEvent): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
     
-    if (!canModifyPhases()) {
-      ui.notifications.warn("You don't have permission to roll reactions");
-      return;
-    }
-
     const combatantId = $(event.currentTarget).data("combatant-id");
     const combat = game.combat;
     if (!combat || !combatantId) return;
@@ -405,9 +560,429 @@ export class EonPhasesPanel extends Application {
     const combatant = combat.combatants.get(combatantId);
     if (!combatant) return;
 
-    await rollReactionForCombatant(combatant);
-    // Re-render to show any updates (order, attacker/defender)
+    // Check permissions: GM can always modify, non-GM can only modify owned tokens
+    const isGM = game.user?.isGM ?? false;
+    const isOwner = combatant.actor?.testUserPermission(game.user!, "OWNER") ?? false;
+    
+    if (!isGM && !isOwner) {
+      ui.notifications.warn("You don't have permission to modify roles for this combatant");
+      return;
+    }
+
+    if (!canModifyPhases()) {
+      ui.notifications.warn("You don't have permission to modify phases");
+      return;
+    }
+
+    const flags = getFlags(combatant);
+    if (flags.phase !== "melee" || !flags.meleeRole) {
+      ui.notifications.warn("Can only toggle role for combatants in melee with a role");
+      return;
+    }
+
+    // Toggle the role
+    const newRole = flags.meleeRole === "attacker" ? "defender" : "attacker";
+    await combatant.setFlag(MODULE_ID, "meleeRole", newRole);
+    
+    // Only toggle the other person's role if there are exactly 2 people in the engagement
+    // (can't have both be defenders in a 1v1, but in 2v1 or larger, each person switches independently)
+    if (flags.engagementGroup) {
+      const combatantsByPhase = getCombatantsByPhase(combat);
+      const meleeCombatants = combatantsByPhase.get("melee") || [];
+      const groupMembers = meleeCombatants.filter(c => {
+        const cFlags = getFlags(c);
+        return cFlags.engagementGroup === flags.engagementGroup;
+      });
+      
+      // Only toggle both if there are exactly 2 people in the engagement
+      if (groupMembers.length === 2) {
+        const otherCombatant = groupMembers.find(c => c.id !== combatant.id);
+        if (otherCombatant) {
+          const otherNewRole = newRole === "attacker" ? "defender" : "attacker";
+          await otherCombatant.setFlag(MODULE_ID, "meleeRole", otherNewRole);
+        }
+      }
+      // If more than 2 people, only toggle the selected combatant (already done above)
+    } else if (flags.engagedWith) {
+      // Backward compatibility: old engagedWith system (always 2 people)
+      const otherCombatant = combat.combatants.get(flags.engagedWith);
+      if (otherCombatant) {
+        const otherNewRole = newRole === "attacker" ? "defender" : "attacker";
+        await otherCombatant.setFlag(MODULE_ID, "meleeRole", otherNewRole);
+      }
+    }
+
     this.render();
+    ui.notifications.info(`${combatant.name} is now ${newRole === "attacker" ? "Anfallare" : "Försvarare"}`);
+  }
+
+  /**
+   * Handle engaging combatants in melee
+   * Opens a dialog to select which combatants to engage with
+   */
+  async _onEngage(event: JQuery.ClickEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const combatantId = $(event.currentTarget).data("combatant-id");
+    const combat = game.combat;
+    if (!combat || !combatantId) return;
+
+    const combatant = combat.combatants.get(combatantId);
+    if (!combatant) return;
+
+    // Check permissions: GM can always engage, non-GM can only engage owned tokens
+    const isGM = game.user?.isGM ?? false;
+    const isOwner = combatant.actor?.testUserPermission(game.user!, "OWNER") ?? false;
+    
+    if (!isGM && !isOwner) {
+      ui.notifications.warn("You don't have permission to engage this combatant");
+      return;
+    }
+
+    if (!canModifyPhases()) {
+      ui.notifications.warn("You don't have permission to modify phases");
+      return;
+    }
+
+    const flags = getFlags(combatant);
+    if (flags.phase !== "melee") {
+      ui.notifications.warn("Combatant must be in melee phase to engage");
+      return;
+    }
+
+    // Get all melee combatants
+    const combatantsByPhase = getCombatantsByPhase(combat);
+    const meleeCombatants = combatantsByPhase.get("melee") || [];
+    
+    // Prepare available combatants for the dialog
+    // Allow selecting any melee combatant, even if already engaged (to join engagements)
+    const availableCombatants = meleeCombatants
+      .filter(c => c.id !== combatantId)
+      .map(c => {
+        const cFlags = getFlags(c);
+        const isInSameGroup = cFlags.engagementGroup === flags.engagementGroup;
+        const isInDifferentGroup = cFlags.engagementGroup && cFlags.engagementGroup !== flags.engagementGroup;
+        
+        return {
+          id: c.id,
+          name: c.name,
+          img: c.token?.texture?.src || c.actor?.img || "icons/svg/mystery-man.svg",
+          selected: isInSameGroup,
+          engagedWith: isInDifferentGroup,
+          engagementGroup: cFlags.engagementGroup,
+        };
+      });
+
+    if (availableCombatants.length === 0) {
+      ui.notifications.warn("Inga andra stridande i närstridsfasen att engagera med");
+      return;
+    }
+
+    // Show engagement dialog
+    this._showEngageDialog(combatant, availableCombatants, flags.engagementGroup);
+  }
+  
+  /**
+   * Show dialog for selecting combatants to engage with
+   */
+  private _showEngageDialog(
+    combatant: Combatant,
+    availableCombatants: Array<{ id: string; name: string; img: string; selected: boolean; engagedWith: boolean }>,
+    currentGroupId: string | null | undefined
+  ): void {
+    const dialogContent = `
+      <div class="eon-engage-dialog">
+        <div class="eon-engage-header">
+          <h3>Engagera ${combatant.name} i närstrid</h3>
+          <p class="eon-engage-hint">Välj en stridande att engagera med (du kan gå med i befintliga engagemang):</p>
+        </div>
+        
+        <div class="eon-engage-list">
+          ${availableCombatants.map(c => `
+            <label class="eon-engage-option">
+              <input type="radio" 
+                     name="engage-target" 
+                     value="${c.id}" 
+                     ${c.selected ? 'checked' : ''}>
+              <img class="eon-engage-option-img" src="${c.img}" alt="${c.name}">
+              <span class="eon-engage-option-name">${c.name}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    new Dialog({
+      title: "Engagera i närstrid",
+      content: dialogContent,
+      buttons: {
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "Avbryt",
+          callback: () => {
+            // Cancel - do nothing
+          },
+        },
+        engage: {
+          icon: '<i class="fas fa-link"></i>',
+          label: "Engagera",
+          callback: async (html: JQuery) => {
+            // Get selected radio button
+            const selectedRadio = html.find('input[type="radio"]:checked');
+            if (selectedRadio.length === 0) {
+              ui.notifications.warn("Du måste välja en stridande att engagera med");
+              return false; // Keep dialog open
+            }
+            
+            const targetId = selectedRadio.val() as string;
+            if (!targetId) {
+              ui.notifications.warn("Ogiltigt val");
+              return false;
+            }
+            
+            // Get the target combatant to check if they're already engaged
+            const combat = game.combat;
+            if (!combat) return false;
+            
+            const targetCombatant = combat.combatants.get(targetId);
+            if (!targetCombatant) return false;
+            
+            const targetFlags = getFlags(targetCombatant);
+            
+            // If target is already engaged, join their engagement group
+            // Otherwise, create a new engagement with just these two
+            if (targetFlags.engagementGroup) {
+              // Join existing engagement
+              await this._joinEngagement(combatant, targetCombatant, targetFlags.engagementGroup);
+            } else {
+              // Create new engagement
+              await this._applyEngagement(combatant, [combatant.id, targetId], currentGroupId);
+            }
+          },
+        },
+      },
+      default: "engage",
+      close: () => {
+        // Cleanup if needed
+      },
+    }).render(true);
+  }
+  
+  /**
+   * Apply engagement to selected combatants
+   */
+  private async _applyEngagement(
+    primaryCombatant: Combatant,
+    selectedIds: string[],
+    currentGroupId: string | null | undefined
+  ): Promise<void> {
+    const combat = game.combat;
+    if (!combat) return;
+
+    const groupId = currentGroupId || `group-${Date.now()}`;
+    const selectedCombatants = selectedIds
+      .map(id => combat.combatants.get(id))
+      .filter(Boolean) as Combatant[];
+
+    if (selectedCombatants.length < 2) {
+      ui.notifications.warn("Du måste välja minst två stridande");
+      return;
+    }
+
+    // Remove all combatants from their current groups first (if changing groups)
+    if (currentGroupId) {
+      const combatantsByPhase = getCombatantsByPhase(combat);
+      const meleeCombatants = combatantsByPhase.get("melee") || [];
+      
+      for (const c of meleeCombatants) {
+        const cFlags = getFlags(c);
+        if (cFlags.engagementGroup === currentGroupId && !selectedIds.includes(c.id)) {
+          await c.setFlag(MODULE_ID, "engagementGroup", null);
+          await c.setFlag(MODULE_ID, "meleeRole", null);
+        }
+      }
+    }
+
+    // Sort by reaction roll to determine roles
+    const withRolls = selectedCombatants.map(c => ({
+      combatant: c,
+      roll: getFlags(c).reactionRoll ?? 0,
+    }));
+    withRolls.sort((a, b) => b.roll - a.roll);
+
+    // Highest roll = attacker, others = defenders
+    for (let i = 0; i < withRolls.length; i++) {
+      const { combatant: c } = withRolls[i];
+      await c.setFlag(MODULE_ID, "engagementGroup", groupId);
+      await c.setFlag(MODULE_ID, "meleeRole", i === 0 ? "attacker" : "defender");
+    }
+
+    const names = selectedCombatants.map(c => c.name).join(", ");
+    ui.notifications.info(`${names} är nu engagerade i närstrid`);
+
+    this.render();
+  }
+  
+  /**
+   * Join an existing engagement group
+   */
+  private async _joinEngagement(
+    joiningCombatant: Combatant,
+    targetCombatant: Combatant,
+    groupId: string
+  ): Promise<void> {
+    const combat = game.combat;
+    if (!combat) return;
+
+    // Remove joining combatant from their current group if they have one
+    const joiningFlags = getFlags(joiningCombatant);
+    if (joiningFlags.engagementGroup && joiningFlags.engagementGroup !== groupId) {
+      // They're leaving their old group
+      const oldGroupId = joiningFlags.engagementGroup;
+      const combatantsByPhase = getCombatantsByPhase(combat);
+      const meleeCombatants = combatantsByPhase.get("melee") || [];
+      
+      // Check if old group still has members
+      const oldGroupMembers = meleeCombatants.filter(c => {
+        const flags = getFlags(c);
+        return flags.engagementGroup === oldGroupId && c.id !== joiningCombatant.id;
+      });
+      
+      // If old group only had 2 members, disengage the other one
+      if (oldGroupMembers.length === 1) {
+        const other = oldGroupMembers[0];
+        await other.setFlag(MODULE_ID, "engagementGroup", null);
+        await other.setFlag(MODULE_ID, "meleeRole", null);
+      }
+    }
+
+    // Get all combatants in the target group
+    const combatantsByPhase = getCombatantsByPhase(combat);
+    const meleeCombatants = combatantsByPhase.get("melee") || [];
+    const groupMembers = meleeCombatants.filter(c => {
+      const flags = getFlags(c);
+      return flags.engagementGroup === groupId;
+    });
+    
+    // Add joining combatant to the group
+    groupMembers.push(joiningCombatant);
+    
+    // When joining an existing engagement, the new person defaults to attacker
+    // Get existing members (excluding the joining one)
+    const existingMembers = groupMembers.filter(c => c.id !== joiningCombatant.id);
+    
+    // Set joining combatant as attacker
+    await joiningCombatant.setFlag(MODULE_ID, "engagementGroup", groupId);
+    await joiningCombatant.setFlag(MODULE_ID, "meleeRole", "attacker");
+    
+    // Set all existing members as defenders
+    for (const c of existingMembers) {
+      await c.setFlag(MODULE_ID, "engagementGroup", groupId);
+      await c.setFlag(MODULE_ID, "meleeRole", "defender");
+    }
+
+    const names = groupMembers.map(c => c.name).join(", ");
+    ui.notifications.info(`${joiningCombatant.name} gick med i engagemanget med ${names}`);
+
+    this.render();
+  }
+
+  /**
+   * Handle disengaging from melee
+   */
+  async _onDisengage(event: JQuery.ClickEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const combatantId = $(event.currentTarget).data("combatant-id");
+    const combat = game.combat;
+    if (!combat || !combatantId) return;
+
+    const combatant = combat.combatants.get(combatantId);
+    if (!combatant) return;
+
+    // Check permissions: GM can always disengage, non-GM can only disengage owned tokens
+    const isGM = game.user?.isGM ?? false;
+    const isOwner = combatant.actor?.testUserPermission(game.user!, "OWNER") ?? false;
+    
+    if (!isGM && !isOwner) {
+      ui.notifications.warn("You don't have permission to disengage this combatant");
+      return;
+    }
+
+    if (!canModifyPhases()) {
+      ui.notifications.warn("You don't have permission to modify phases");
+      return;
+    }
+
+    const flags = getFlags(combatant);
+    if (!flags.engagementGroup && !flags.engagedWith) {
+      ui.notifications.warn("Combatant is not engaged");
+      return;
+    }
+
+    // Remove from engagement group
+    const groupId = flags.engagementGroup;
+    await combatant.setFlag(MODULE_ID, "engagementGroup", null);
+    await combatant.setFlag(MODULE_ID, "meleeRole", null);
+    
+    // Also clear old engagedWith for backward compatibility
+    if (flags.engagedWith) {
+      await combatant.setFlag(MODULE_ID, "engagedWith", null);
+      const otherCombatant = combat.combatants.get(flags.engagedWith);
+      if (otherCombatant) {
+        await otherCombatant.setFlag(MODULE_ID, "engagedWith", null);
+        await otherCombatant.setFlag(MODULE_ID, "meleeRole", null);
+      }
+    }
+
+    // If this was the only member of the group, the group is now empty
+    // Otherwise, other members remain engaged
+
+    this.render();
+    ui.notifications.info(`${combatant.name} har avslutat engagemanget`);
+  }
+
+  /**
+   * Sort melee combatants to group engaged pairs together
+   * Attacker comes first, then their defender
+   */
+  private _sortMeleeCombatants(combatants: Combatant[]): Combatant[] {
+    const sorted: Combatant[] = [];
+    const processed = new Set<string>();
+    
+    // First, add all engaged pairs (attacker + defender)
+    for (const combatant of combatants) {
+      if (processed.has(combatant.id)) continue;
+      
+      const flags = getFlags(combatant);
+      if (flags.engagedWith) {
+        // This is part of an engagement pair
+        const other = combatants.find(c => c.id === flags.engagedWith);
+        if (other) {
+          // Add attacker first, then defender
+          if (flags.meleeRole === "attacker") {
+            sorted.push(combatant);
+            sorted.push(other);
+          } else {
+            sorted.push(other);
+            sorted.push(combatant);
+          }
+          processed.add(combatant.id);
+          processed.add(other.id);
+        }
+      }
+    }
+    
+    // Then add all unengaged combatants
+    for (const combatant of combatants) {
+      if (!processed.has(combatant.id)) {
+        sorted.push(combatant);
+      }
+    }
+    
+    return sorted;
   }
 }
 
@@ -443,7 +1018,6 @@ export function setupPanelHooks(): void {
 
   // Close panel when combat ends
   Hooks.on("deleteCombat", () => {
-    lastKnownRound = 0;
     if (EonPhasesPanel.instance?.rendered) {
       EonPhasesPanel.instance.close();
     }

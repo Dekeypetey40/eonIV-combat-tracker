@@ -31,35 +31,92 @@
           
           <ul class="eon-combatant-list" data-phase="{{id}}">
             {{#each combatants}}
-              <li class="eon-combatant-row {{#if defeated}}defeated{{/if}} {{#if meleeRole}}melee-{{meleeRole}}{{/if}}" 
+              <li class="eon-combatant-row {{#if defeated}}defeated{{/if}} {{#if meleeRole}}melee-{{meleeRole}}{{/if}} {{#if engagedWith}}eon-engaged{{/if}}" 
                   data-combatant-id="{{id}}"
                   data-phase="{{../id}}"
                   draggable="true">
-                {{#if meleeRole}}
-                  {{#if isAttacker}}
-                    <i class="fas fa-sword eon-melee-role-icon eon-attacker-icon" title="Anfallare"></i>
-                  {{/if}}
-                  {{#if isDefender}}
-                    <i class="fas fa-shield eon-melee-role-icon eon-defender-icon" title="Försvarare"></i>
+                {{#if isMelee}}
+                  {{#if meleeRole}}
+                    {{#if isAttacker}}
+                      <i class="fas fa-sword eon-melee-role-icon eon-attacker-icon" title="Anfallare"></i>
+                    {{/if}}
+                    {{#if isDefender}}
+                      <i class="fas fa-shield-alt eon-melee-role-icon eon-defender-icon" title="Försvarare"></i>
+                    {{/if}}
                   {{/if}}
                 {{/if}}
                 <img class="eon-combatant-img" src="{{img}}" alt="{{name}}">
                 <span class="eon-combatant-name">{{name}}</span>
-                {{#if ../canModify}}
-                  <button type="button" 
-                          class="eon-roll-reaction-btn" 
-                          data-action="roll-reaction" 
-                          data-combatant-id="{{id}}"
-                          title="Slå Reaktion">
-                    <i class="fas fa-dice"></i>
-                  </button>
+                {{#if engagementGroupMemberImages}}
+                  <span class="eon-engaged-tokens" title="Engagerad med: {{#each engagementGroupMemberImages}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}">
+                    <i class="fas fa-link eon-link-icon"></i>
+                    {{#each engagementGroupMemberImages}}
+                      <img class="eon-engaged-token-img" src="{{img}}" alt="{{name}}" title="{{name}}">
+                    {{/each}}
+                  </span>
+                {{else if engagedWithName}}
+                  <span class="eon-engaged-label" title="Engagerad med {{engagedWithName}}">
+                    <i class="fas fa-link"></i> {{engagedWithName}}
+                  </span>
                 {{/if}}
-                {{#if reactionRoll}}
-                  <span class="eon-reaction-roll" title="Reaktionsslag: {{reactionRoll}}">{{reactionRoll}}</span>
-                {{/if}}
-                {{#if defeated}}
-                  <i class="fas fa-skull eon-defeated-icon" title="Besegrad"></i>
-                {{/if}}
+                <div class="eon-combatant-controls">
+                  {{#if reactionRoll}}
+                    <span class="eon-reaction-roll" title="Reaktionsslag: {{reactionRoll}}">{{reactionRoll}}</span>
+                  {{/if}}
+                  {{#if isMelee}}
+                    {{#if canInteract}}
+                      {{#if canModify}}
+                        {{#if engagementGroup}}
+                          <button type="button" 
+                                  class="eon-toggle-role-btn" 
+                                  data-action="toggle-role" 
+                                  data-combatant-id="{{id}}"
+                                  draggable="false"
+                                  title="Växla roll: Byt mellan Anfallare och Försvarare">
+                            <i class="fas fa-exchange-alt"></i>
+                          </button>
+                          <button type="button" 
+                                  class="eon-disengage-btn" 
+                                  data-action="disengage" 
+                                  data-combatant-id="{{id}}"
+                                  draggable="false"
+                                  title="Avsluta närstrid: Ta bort engagemang">
+                            <i class="fas fa-unlink"></i>
+                          </button>
+                        {{else if engagedWith}}
+                          <button type="button" 
+                                  class="eon-toggle-role-btn" 
+                                  data-action="toggle-role" 
+                                  data-combatant-id="{{id}}"
+                                  draggable="false"
+                                  title="Växla roll: Byt mellan Anfallare och Försvarare">
+                            <i class="fas fa-exchange-alt"></i>
+                          </button>
+                          <button type="button" 
+                                  class="eon-disengage-btn" 
+                                  data-action="disengage" 
+                                  data-combatant-id="{{id}}"
+                                  draggable="false"
+                                  title="Avsluta närstrid: Ta bort engagemang">
+                            <i class="fas fa-unlink"></i>
+                          </button>
+                        {{else}}
+                          <button type="button" 
+                                  class="eon-engage-btn" 
+                                  data-action="engage" 
+                                  data-combatant-id="{{id}}"
+                                  draggable="false"
+                                  title="Engagera i närstrid: Öppnar en dialog för att välja vilka stridande som ska engagera tillsammans">
+                            <i class="fas fa-link"></i>
+                          </button>
+                        {{/if}}
+                      {{/if}}
+                    {{/if}}
+                  {{/if}}
+                  {{#if defeated}}
+                    <i class="fas fa-skull eon-defeated-icon" title="Besegrad"></i>
+                  {{/if}}
+                </div>
               </li>
             {{else}}
               <li class="eon-combatant-empty">

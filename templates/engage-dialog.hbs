@@ -1,0 +1,29 @@
+{{!-- Engagement Dialog --}}
+<div class="eon-engage-dialog">
+  <div class="eon-engage-header">
+    <h3>Engagera {{combatantName}} i närstrid</h3>
+    <p class="eon-engage-hint">Välj vilka stridande som ska engagera tillsammans:</p>
+  </div>
+  
+  <div class="eon-engage-list">
+    {{#each availableCombatants}}
+      <label class="eon-engage-option">
+        <input type="checkbox" 
+               value="{{id}}" 
+               {{#if selected}}checked{{/if}}
+               {{#if disabled}}disabled{{/if}}>
+        <img class="eon-engage-option-img" src="{{img}}" alt="{{name}}">
+        <span class="eon-engage-option-name">{{name}}</span>
+        {{#if engagedWith}}
+          <span class="eon-engage-option-status">(redan engagerad)</span>
+        {{/if}}
+      </label>
+    {{/each}}
+  </div>
+  
+  <div class="eon-engage-footer">
+    <button type="button" class="eon-engage-cancel">Avbryt</button>
+    <button type="button" class="eon-engage-confirm">Engagera</button>
+  </div>
+</div>
+

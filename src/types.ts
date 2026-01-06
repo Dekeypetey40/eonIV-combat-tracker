@@ -17,6 +17,10 @@ export interface EonCombatantFlags {
   meleeRole?: "attacker" | "defender" | null;
   /** Reaction roll result (for sorting) */
   reactionRoll?: number | null;
+  /** ID of the combatant this one is engaged with (for melee) - DEPRECATED, use engagementGroup */
+  engagedWith?: string | null;
+  /** Engagement group ID - multiple combatants can share the same group ID */
+  engagementGroup?: string | null;
 }
 
 /**

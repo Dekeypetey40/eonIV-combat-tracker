@@ -20,21 +20,27 @@ This module provides a dedicated UI panel for managing these phases, allowing th
 ## Features
 
 ### ✅ Phase-Based Display
-Four-column layout showing all three combat phases plus an "Ej aktiv" (Not Acting) column for combatants who haven't chosen a phase yet.
+Tall, narrow column layout showing all three combat phases plus an "Ej aktiv" (Not Acting) column for combatants who haven't chosen a phase yet.
 
 ### ✅ Drag and Drop
-GMs can drag combatants between phases and reorder them within phases to establish turn order.
+- Drag combatants between phases
+- Reorder within phases to establish turn order
+- **Engagement status preserved** when dragging within the same phase
 
 ### ✅ Automatic Round Reset
 When advancing to a new round, all combatants automatically reset to "Not Acting" - matching Eon IV's rule that phase selection happens each round.
 
 ### ✅ Combat Tracker Integration
-Opens directly from a button in Foundry's Combat Tracker sidebar.
+- Opens directly from a button in Foundry's Combat Tracker sidebar
+- Auto-opens when combat starts (if enabled)
 
-### 🔮 Future Features (Planned)
-- **Reaction Roll**: Button to roll Reaction for automatic turn order sorting
-- **Engaged Status**: Visual indicators for combatants in melee engagement
-- **Swedish Localization**: Full Swedish language support
+### ✅ Melee Engagement System
+- **Engage Combatants**: Dialog-based engagement system for melee combat
+- **Attacker/Defender Roles**: Automatic role assignment based on reaction rolls
+- **Team Engagements**: Support for multiple combatants engaging together (e.g., 2v1, 3v1)
+- **Visual Indicators**: Token images show who's engaged with whom
+- **Role Toggle**: Switch attacker/defender roles (switches both in 1v1 engagements)
+- **Join Existing Engagements**: New combatants can join ongoing melee engagements
 
 ## Requirements
 
