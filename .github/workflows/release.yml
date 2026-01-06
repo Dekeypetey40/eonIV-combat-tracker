@@ -1,0 +1,103 @@
+# GitHub Actions Workflow: Release Eon IV Combat Tracker
+#
+# This workflow automatically builds and releases the module when you push a version tag.
+#
+# Usage:
+#   git tag v0.1.0
+#   git push origin v0.1.0
+#
+# The workflow will:
+#   1. Build the TypeScript source
+#   2. Create a module.zip with all necessary files
+#   3. Create a GitHub Release with the artifacts
+#   4. (Optional) Notify Foundry's package API
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  MODULE_ID: eon-combat-tracker
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build module
+        run: npm run build
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update module.json version
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.version }}"/' module.json
+
+      - name: Create module directory structure
+        run: |
+          mkdir -p release/${{ env.MODULE_ID }}
+          cp -r dist release/${{ env.MODULE_ID }}/
+          cp -r styles release/${{ env.MODULE_ID }}/
+          cp -r templates release/${{ env.MODULE_ID }}/
+          cp module.json release/${{ env.MODULE_ID }}/
+          cp README.md release/${{ env.MODULE_ID }}/
+          cp LICENSE release/${{ env.MODULE_ID }}/
+
+      - name: Create ZIP archive
+        run: |
+          cd release
+          zip -r ../module.zip ${{ env.MODULE_ID }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            module.zip
+            module.json
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Optional: Notify Foundry Package API
+      # Uncomment and add FOUNDRY_RELEASE_TOKEN secret to enable
+      # - name: Notify Foundry Package API
+      #   if: ${{ !contains(github.ref, '-beta') && !contains(github.ref, '-alpha') }}
+      #   run: |
+      #     curl -X POST "https://api.foundryvtt.com/_api/packages/release_version" \
+      #       -H "Content-Type: application/json" \
+      #       -H "Authorization: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}" \
+      #       -d '{
+      #         "id": "${{ env.MODULE_ID }}",
+      #         "release": {
+      #           "version": "${{ steps.version.outputs.version }}",
+      #           "manifest": "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/module.json",
+      #           "notes": "https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}",
+      #           "compatibility": {
+      #             "minimum": "13",
+      #             "verified": "13"
+      #           }
+      #         }
+      #       }'
+
