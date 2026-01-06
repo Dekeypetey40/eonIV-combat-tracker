@@ -1,0 +1,31 @@
+{
+  "id": "eon-combat-tracker",
+  "title": "Eon IV Combat Tracker",
+  "description": "A phase-based combat tracker for Eon IV. Displays combatants in Ranged, Melee, and Mystic phases with drag-and-drop reordering.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Dekeypetey40",
+      "url": "https://github.com/Dekeypetey40"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "relationships": {
+    "requires": [
+      {
+        "id": "eon-rpg",
+        "type": "system"
+      }
+    ]
+  },
+  "esmodules": ["dist/main.js"],
+  "styles": ["styles/eon-combat-tracker.css"],
+  "languages": [],
+  "url": "https://github.com/Dekeypetey40/eonIV-combat-tracker",
+  "manifest": "https://github.com/Dekeypetey40/eonIV-combat-tracker/releases/latest/download/module.json",
+  "download": "https://github.com/Dekeypetey40/eonIV-combat-tracker/releases/latest/download/module.zip"
+}
+
