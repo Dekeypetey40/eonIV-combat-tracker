@@ -21,7 +21,7 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
   }
 
   try {
-    const system = actor.system as any;
+    const system = (actor as any).system;
     
     // Method 1: Try to find and trigger the reaction ability's roll method directly
     // The Eon system stores reaction in harleddegenskaper (derived attributes)
@@ -244,11 +244,11 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
     }
 
     // If we get here, we couldn't find a way to roll
-    ui.notifications.warn(`Could not find Reaction roll method for ${actor.name}. Please use the character sheet to roll Reaction.`);
+    ui.notifications?.warn(`Could not find Reaction roll method for ${actor.name}. Please use the character sheet to roll Reaction.`);
     return null;
   } catch (error) {
     console.error(`${MODULE_ID} | Error rolling Reaction:`, error);
-    ui.notifications.error(`Failed to roll Reaction for ${actor.name}`);
+    ui.notifications?.error(`Failed to roll Reaction for ${actor.name}`);
     return null;
   }
 }
@@ -258,7 +258,7 @@ export async function rollReaction(combatant: Combatant): Promise<number | null>
  * For melee phase, determines attacker/defender based on roll
  */
 export async function rollReactionForCombatant(combatant: Combatant): Promise<void> {
-  const combat = game.combat;
+  const combat = (game as Game).combat;
   if (!combat) return;
 
   const result = await rollReaction(combatant);
@@ -274,7 +274,7 @@ export async function rollReactionForCombatant(combatant: Combatant): Promise<vo
   if (finalResult === 0 && storedRoll === null) {
     // If we got 0 and there's no stored roll, the system handled it
     // We'll need to wait for the chat message or skip ordering
-    ui.notifications.info(`${combatant.name}: Reaktionsslag utfört (kontrollera chatten)`);
+      ui.notifications?.info(`${combatant.name}: Reaktionsslag utfört (kontrollera chatten)`);
     return;
   }
 
@@ -306,7 +306,7 @@ export async function rollReactionForCombatant(combatant: Combatant): Promise<vo
   }
 
   if (finalResult > 0) {
-    ui.notifications.info(`${combatant.name}: Reaktion ${finalResult}`);
+    ui.notifications?.info(`${combatant.name}: Reaktion ${finalResult}`);
   }
 }
 

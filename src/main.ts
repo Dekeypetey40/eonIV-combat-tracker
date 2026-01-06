@@ -56,7 +56,7 @@ Hooks.once("ready", () => {
   // Module loaded - EonDebug helpers available globally
   
   // Auto-open panel if there's an active combat and user can view it
-  if (game.combat && canViewPanel()) {
+  if ((game as Game).combat && canViewPanel()) {
     // Small delay to ensure UI is fully rendered
     setTimeout(() => {
       EonPhasesPanel.open();
@@ -69,12 +69,12 @@ Hooks.once("ready", () => {
      * Check the current state of all combatants
      */
     checkCombatants: () => {
-      const combat = game.combat;
+      const combat = (game as Game).combat;
       if (!combat) {
         return;
       }
       
-      return Array.from(combat.combatants).map(c => {
+      return Array.from(combat.combatants).map((c: Combatant) => {
         const flags = getFlags(c);
         return {
           id: c.id,
@@ -93,13 +93,13 @@ Hooks.once("ready", () => {
      * If no IDs provided, moves all combatants to melee
      */
     moveToMelee: async (combatantIds?: string[]) => {
-      const combat = game.combat;
+      const combat = (game as Game).combat;
       if (!combat) {
         return;
       }
       
       const targets = combatantIds 
-        ? combatantIds.map(id => combat.combatants.get(id)).filter(Boolean) as Combatant[]
+        ? combatantIds.map(id => combat.combatants.get(id)).filter((c): c is Combatant => c !== undefined)
         : Array.from(combat.combatants);
       
       if (targets.length === 0) {
@@ -173,12 +173,12 @@ Hooks.on("renderCombatTracker", (app: Application, html: JQuery | HTMLElement) =
   }
   
   // Only add if there's an active combat
-  if (!game.combat) {
+  if (!(game as Game).combat) {
     return;
   }
   
-  // Convert html to jQuery if it's not already
-  const $html = html instanceof jQuery ? html : $(html);
+  // Convert html to jQuery if it's not already - ensure it's always jQuery
+  const $html = (html instanceof jQuery ? html : $(html)) as JQuery<HTMLElement>;
   
   // Check if button already exists (prevent duplicates on re-render)
   if ($html.find("#eon-phases-button").length > 0) {
