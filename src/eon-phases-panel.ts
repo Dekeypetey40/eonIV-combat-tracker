@@ -6,7 +6,7 @@
  */
 
 import { MODULE_ID, PHASES, EonPhase } from "./types";
-import { getCombatantsByPhase, getFlags, setPhase } from "./flags";
+import { getCombatantsByPhase, getFlags, setPhase, resetAllPhases } from "./flags";
 
 /**
  * The main panel for managing combat phases in Eon IV
@@ -254,10 +254,7 @@ export class EonPhasesPanel extends Application {
     const combat = game.combat;
     if (!combat || !game.user?.isGM) return;
 
-    // Import the reset function dynamically to avoid circular deps
-    const { resetAllPhases } = await import("./flags");
     await resetAllPhases(combat);
-    
     this.render();
   }
 }
@@ -266,11 +263,32 @@ export class EonPhasesPanel extends Application {
  * Re-render the panel when relevant combat data changes
  */
 export function setupPanelHooks(): void {
-  // Re-render when combat changes
-  Hooks.on("updateCombat", () => {
+  // Track the last known round to detect round changes
+  let lastKnownRound = 0;
+
+  // Re-render when combat changes and reset phases on new round
+  Hooks.on("updateCombat", (combat: Combat, change: object) => {
+    // Check if round changed
+    if ("round" in change && combat.round !== lastKnownRound) {
+      const newRound = combat.round ?? 1;
+      
+      // Only reset on round increase (not on going back)
+      if (newRound > lastKnownRound && game.user?.isGM) {
+        console.log(`${MODULE_ID} | New round ${newRound} - resetting phase assignments`);
+        resetAllPhases(combat);
+      }
+      
+      lastKnownRound = newRound;
+    }
+
     if (EonPhasesPanel.instance?.rendered) {
       EonPhasesPanel.instance.render();
     }
+  });
+
+  // Initialize lastKnownRound when combat starts
+  Hooks.on("createCombat", (combat: Combat) => {
+    lastKnownRound = combat.round ?? 0;
   });
 
   // Re-render when combatants change
@@ -294,6 +312,7 @@ export function setupPanelHooks(): void {
 
   // Close panel when combat ends
   Hooks.on("deleteCombat", () => {
+    lastKnownRound = 0;
     if (EonPhasesPanel.instance?.rendered) {
       EonPhasesPanel.instance.close();
     }
