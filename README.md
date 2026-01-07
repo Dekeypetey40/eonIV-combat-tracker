@@ -7,8 +7,6 @@ A Foundry VTT module that provides a **phase-based combat tracker** for the Swed
 
 **[🎮 Try the Interactive Demo](https://dekeypetey40.github.io/eonIV-combat-tracker/)** - Experience all features in your browser!
 
-![Eon IV Combat Tracker Preview](https://via.placeholder.com/700x400?text=Screenshot+Coming+Soon)
-
 ## Overview
 
 Eon IV uses a unique combat system where each round is divided into three phases:
