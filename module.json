@@ -2,7 +2,7 @@
   "id": "eon-combat-tracker",
   "title": "Eon IV Combat Tracker",
   "description": "A phase-based combat tracker for Eon IV. Displays combatants in Ranged, Melee, and Mystic phases with drag-and-drop reordering.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "authors": [
     {
       "name": "Dekeypetey40",

@@ -814,25 +814,18 @@ export class EonPhasesPanel extends Application {
       return flags.engagementGroup === groupId;
     });
     
-    // Add joining combatant to the group
-    groupMembers.push(joiningCombatant);
-    
     // When joining an existing engagement, the new person defaults to attacker
-    // Get existing members (excluding the joining one)
-    const existingMembers = groupMembers.filter(c => c.id !== joiningCombatant.id);
-    
-    // Set joining combatant as attacker
+    // Set joining combatant as attacker and add to group
     await joiningCombatant.setFlag(MODULE_ID, "engagementGroup", groupId);
     await joiningCombatant.setFlag(MODULE_ID, "meleeRole", "attacker");
     
-    // Set all existing members as defenders
-    for (const c of existingMembers) {
-      await c.setFlag(MODULE_ID, "engagementGroup", groupId);
-      await c.setFlag(MODULE_ID, "meleeRole", "defender");
-    }
+    // Preserve existing members' roles - don't change them
+    // They're already in the group with their correct roles
+    // No need to update their flags since they're already set correctly
 
-    const names = groupMembers.map(c => c.name).join(", ");
-    ui.notifications?.info(`${joiningCombatant.name} gick med i engagemanget med ${names}`);
+    // Build list of existing group members for notification (excluding the joining combatant)
+    const existingNames = groupMembers.map(c => c.name).join(", ");
+    ui.notifications?.info(`${joiningCombatant.name} gick med i engagemanget med ${existingNames}`);
 
     this.render();
   }
