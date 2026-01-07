@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eon IV Combat Tracker - Interactive Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .demo-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #c9a227;
+        }
+
+        .demo-header p {
+            font-size: 1.1em;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: #4a5568;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+
+        .demo-panel {
+            background: #1e1e2e;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a5568;
+        }
+
+        .panel-header h2 {
+            font-size: 1.5em;
+            color: #c9a227;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+        }
+
+        .phases-container {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .phase-column {
+            min-width: 280px;
+            background: #2a2a3e;
+            border: 2px solid #4a5568;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .phase-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #3a3a4e;
+            border-radius: 4px;
+            color: #c9a227;
+        }
+
+        .phase-none .phase-header {
+            color: #888;
+        }
+
+        .combatant-list {
+            min-height: 200px;
+        }
+
+        .combatant-item {
+            background: #3a3a4e;
+            border: 2px solid #4a5568;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .combatant-item:hover {
+            border-color: #c9a227;
+            transform: translateX(5px);
+        }
+
+        .combatant-item.dragging {
+            opacity: 0.5;
+        }
+
+        .combatant-item.engaged {
+            border-left: 4px solid #c9a227;
+        }
+
+        .combatant-item.attacker {
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .combatant-item.defender {
+            border-left-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .combatant-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #4a5568;
+            object-fit: cover;
+        }
+
+        .combatant-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .combatant-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-engage {
+            background: #c9a227;
+            color: white;
+        }
+
+        .btn-disengage {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-toggle {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .engaged-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 10px;
+            font-size: 0.8em;
+            color: #c9a227;
+        }
+
+        .engaged-token {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid #c9a227;
+        }
+
+        .drop-zone {
+            min-height: 50px;
+            border: 2px dashed transparent;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #c9a227;
+            background: rgba(201, 162, 39, 0.1);
+        }
+
+        .demo-info {
+            margin-top: 30px;
+            background: #2a2a3e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4a5568;
+        }
+
+        .demo-info h3 {
+            color: #c9a227;
+            margin-bottom: 15px;
+        }
+
+        .demo-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .demo-info li {
+            padding: 8px 0;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .demo-info li:last-child {
+            border-bottom: none;
+        }
+
+        .demo-info code {
+            background: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #4ecdc4;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2a2a3e;
+            border: 2px solid #c9a227;
+            border-radius: 4px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .dialog {
+            background: #2a2a3e;
+            border: 2px solid #c9a227;
+            border-radius: 8px;
+            padding: 25px;
+            min-width: 400px;
+            max-width: 600px;
+        }
+
+        .dialog h3 {
+            color: #c9a227;
+            margin-bottom: 20px;
+        }
+
+        .dialog-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 8px 0;
+            background: #3a3a4e;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dialog-option:hover {
+            background: #4a4a5e;
+        }
+
+        .dialog-option input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .dialog-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .dialog-btn-primary {
+            background: #c9a227;
+            color: white;
+        }
+
+        .dialog-btn-secondary {
+            background: #4a5568;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>⚔️ Eon IV Combat Tracker</h1>
+            <p>Interactive Demo - Experience the phase-based combat tracker</p>
+            <div>
+                <span class="demo-badge">📦 Foundry VTT Module</span>
+                <span class="demo-badge">🎮 Eon IV RPG</span>
+                <span class="demo-badge">✨ Interactive Demo</span>
+            </div>
+        </div>
+
+        <div class="demo-panel">
+            <div class="panel-header">
+                <h2>Runda 1</h2>
+                <button class="reset-btn" onclick="resetAll()">
+                    <i class="fas fa-redo"></i> Återställ
+                </button>
+            </div>
+
+            <div class="phases-container">
+                <div class="phase-column phase-none" data-phase="none">
+                    <div class="phase-header">Ej aktiv</div>
+                    <div class="combatant-list drop-zone" id="phase-none">
+                        <div class="combatant-item" draggable="true" data-id="combatant-1">
+                            <img src="https://i.pravatar.cc/150?img=1" alt="Warrior" class="combatant-img">
+                            <span class="combatant-name">Krigare</span>
+                        </div>
+                        <div class="combatant-item" draggable="true" data-id="combatant-2">
+                            <img src="https://i.pravatar.cc/150?img=2" alt="Ranger" class="combatant-img">
+                            <span class="combatant-name">Jägare</span>
+                        </div>
+                        <div class="combatant-item" draggable="true" data-id="combatant-3">
+                            <img src="https://i.pravatar.cc/150?img=3" alt="Mage" class="combatant-img">
+                            <span class="combatant-name">Mystiker</span>
+                        </div>
+                        <div class="combatant-item" draggable="true" data-id="combatant-4">
+                            <img src="https://i.pravatar.cc/150?img=4" alt="Rogue" class="combatant-img">
+                            <span class="combatant-name">Tjuv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase-column" data-phase="ranged">
+                    <div class="phase-header">Avståndsfasen</div>
+                    <div class="combatant-list drop-zone" id="phase-ranged"></div>
+                </div>
+
+                <div class="phase-column" data-phase="melee">
+                    <div class="phase-header">Närstridsfasen</div>
+                    <div class="combatant-list drop-zone" id="phase-melee"></div>
+                </div>
+
+                <div class="phase-column" data-phase="mystic">
+                    <div class="phase-header">Mystikfasen</div>
+                    <div class="combatant-list drop-zone" id="phase-mystic"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-info">
+            <h3>🎯 Try These Features:</h3>
+            <ul>
+                <li><strong>Drag & Drop:</strong> Drag combatants between phases to assign them</li>
+                <li><strong>Reorder:</strong> Drag combatants up/down within a phase to set turn order</li>
+                <li><strong>Engage:</strong> Click the <code>🔗</code> button on melee combatants to engage them</li>
+                <li><strong>Toggle Role:</strong> Click <code>🔄</code> to switch attacker/defender roles (both switch in 1v1)</li>
+                <li><strong>Disengage:</strong> Click <code>✖</code> to remove a combatant from engagement</li>
+                <li><strong>Reset:</strong> Click "Återställ" to clear all assignments</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let draggedElement = null;
+        let engagements = new Map();
+        let combatantRoles = new Map();
+
+        // Initialize drag and drop
+        document.querySelectorAll('.combatant-item').forEach(item => {
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+        });
+
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('drop', handleDrop);
+            zone.addEventListener('dragleave', handleDragLeave);
+        });
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            this.classList.add('drag-over');
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            this.classList.remove('drag-over');
+
+            if (draggedElement && draggedElement !== this) {
+                const oldPhase = draggedElement.closest('.phase-column').dataset.phase;
+                const newPhase = this.closest('.phase-column').dataset.phase;
+
+                // Clear engagement if moving to different phase
+                if (oldPhase !== newPhase && oldPhase === 'melee') {
+                    clearEngagement(draggedElement.dataset.id);
+                }
+
+                // Preserve engagement if moving within same phase
+                if (oldPhase === newPhase && oldPhase === 'melee') {
+                    // Engagement preserved
+                }
+
+                this.appendChild(draggedElement);
+                updateButtons();
+                showNotification(`Moved to ${getPhaseName(newPhase)}`);
+            }
+
+            return false;
+        }
+
+        function getPhaseName(phase) {
+            const names = {
+                'none': 'Ej aktiv',
+                'ranged': 'Avståndsfasen',
+                'melee': 'Närstridsfasen',
+                'mystic': 'Mystikfasen'
+            };
+            return names[phase] || phase;
+        }
+
+        function updateButtons() {
+            document.querySelectorAll('.combatant-item').forEach(item => {
+                const phase = item.closest('.phase-column').dataset.phase;
+                const id = item.dataset.id;
+                const isEngaged = engagements.has(id);
+                const isMelee = phase === 'melee';
+
+                // Remove existing buttons
+                const controls = item.querySelector('.combatant-controls');
+                if (controls) controls.remove();
+
+                if (isMelee) {
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'combatant-controls';
+
+                    if (!isEngaged) {
+                        const engageBtn = document.createElement('button');
+                        engageBtn.className = 'btn btn-engage';
+                        engageBtn.innerHTML = '<i class="fas fa-link"></i>';
+                        engageBtn.title = 'Engage';
+                        engageBtn.onclick = () => showEngageDialog(id);
+                        controlsDiv.appendChild(engageBtn);
+                    } else {
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'btn btn-toggle';
+                        toggleBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                        toggleBtn.title = 'Toggle Role';
+                        toggleBtn.onclick = () => toggleRole(id);
+                        controlsDiv.appendChild(toggleBtn);
+
+                        const disengageBtn = document.createElement('button');
+                        disengageBtn.className = 'btn btn-disengage';
+                        disengageBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        disengageBtn.title = 'Disengage';
+                        disengageBtn.onclick = () => disengage(id);
+                        controlsDiv.appendChild(disengageBtn);
+                    }
+
+                    item.appendChild(controlsDiv);
+                }
+
+                // Update engagement indicators
+                updateEngagementIndicators(item, id);
+            });
+        }
+
+        function updateEngagementIndicators(item, id) {
+            // Remove existing indicators
+            const existing = item.querySelector('.engaged-indicator');
+            if (existing) existing.remove();
+
+            if (engagements.has(id)) {
+                const group = engagements.get(id);
+                const otherIds = Array.from(group).filter(otherId => otherId !== id);
+                
+                if (otherIds.length > 0) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'engaged-indicator';
+                    indicator.innerHTML = '<i class="fas fa-link"></i>';
+                    
+                    otherIds.forEach(otherId => {
+                        const otherItem = document.querySelector(`[data-id="${otherId}"]`);
+                        if (otherItem) {
+                            const img = otherItem.querySelector('.combatant-img').cloneNode(true);
+                            img.className = 'engaged-token';
+                            indicator.appendChild(img);
+                        }
+                    });
+                    
+                    item.appendChild(indicator);
+                }
+
+                const role = combatantRoles.get(id);
+                if (role) {
+                    item.classList.add('engaged', role);
+                }
+            } else {
+                item.classList.remove('engaged', 'attacker', 'defender');
+            }
+        }
+
+        function showEngageDialog(combatantId) {
+            const meleePhase = document.getElementById('phase-melee');
+            const meleeCombatants = Array.from(meleePhase.querySelectorAll('.combatant-item'))
+                .filter(item => item.dataset.id !== combatantId);
+
+            if (meleeCombatants.length === 0) {
+                showNotification('No other combatants in melee phase', 'warning');
+                return;
+            }
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.onclick = (e) => {
+                if (e.target === overlay) overlay.remove();
+            };
+
+            const dialog = document.createElement('div');
+            dialog.className = 'dialog';
+            dialog.onclick = (e) => e.stopPropagation();
+
+            dialog.innerHTML = `
+                <h3>Engagera med:</h3>
+                <div id="engage-options"></div>
+                <div class="dialog-actions">
+                    <button class="dialog-btn dialog-btn-secondary" onclick="this.closest('.dialog-overlay').remove()">Avbryt</button>
+                    <button class="dialog-btn dialog-btn-primary" onclick="confirmEngage('${combatantId}')">Engagera</button>
+                </div>
+            `;
+
+            const optionsDiv = dialog.querySelector('#engage-options');
+            meleeCombatants.forEach(item => {
+                const id = item.dataset.id;
+                const name = item.querySelector('.combatant-name').textContent;
+                const img = item.querySelector('.combatant-img').src;
+                const isEngaged = engagements.has(id);
+
+                const option = document.createElement('div');
+                option.className = 'dialog-option';
+                option.innerHTML = `
+                    <input type="radio" name="target" value="${id}" id="target-${id}">
+                    <label for="target-${id}" style="flex: 1; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <img src="${img}" style="width: 32px; height: 32px; border-radius: 50%;">
+                        <span>${name}${isEngaged ? ' (already engaged)' : ''}</span>
+                    </label>
+                `;
+                optionsDiv.appendChild(option);
+            });
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+        }
+
+        function confirmEngage(combatantId) {
+            const selected = document.querySelector('input[name="target"]:checked');
+            if (!selected) {
+                showNotification('Please select a target', 'warning');
+                return;
+            }
+
+            const targetId = selected.value;
+            const targetItem = document.querySelector(`[data-id="${targetId}"]`);
+            
+            // Check if target is already engaged
+            if (engagements.has(targetId)) {
+                // Join existing engagement
+                const existingGroup = engagements.get(targetId);
+                existingGroup.add(combatantId);
+                engagements.set(combatantId, existingGroup);
+                combatantRoles.set(combatantId, 'attacker');
+                showNotification('Joined existing engagement');
+            } else {
+                // Create new engagement
+                const group = new Set([combatantId, targetId]);
+                engagements.set(combatantId, group);
+                engagements.set(targetId, group);
+                combatantRoles.set(combatantId, 'attacker');
+                combatantRoles.set(targetId, 'defender');
+                showNotification('Engagement created');
+            }
+
+            document.querySelector('.dialog-overlay').remove();
+            updateButtons();
+        }
+
+        function toggleRole(combatantId) {
+            const group = engagements.get(combatantId);
+            if (!group) return;
+
+            const groupArray = Array.from(group);
+            const currentRole = combatantRoles.get(combatantId);
+
+            if (groupArray.length === 2) {
+                // 1v1: toggle both
+                groupArray.forEach(id => {
+                    const role = combatantRoles.get(id);
+                    combatantRoles.set(id, role === 'attacker' ? 'defender' : 'attacker');
+                });
+                showNotification('Both roles toggled (1v1 engagement)');
+            } else {
+                // Multiple: toggle only this one
+                combatantRoles.set(combatantId, currentRole === 'attacker' ? 'defender' : 'attacker');
+                showNotification('Role toggled');
+            }
+
+            updateButtons();
+        }
+
+        function disengage(combatantId) {
+            const group = engagements.get(combatantId);
+            if (!group) return;
+
+            if (group.size === 2) {
+                // Remove both from engagement
+                group.forEach(id => {
+                    engagements.delete(id);
+                    combatantRoles.delete(id);
+                });
+            } else {
+                // Remove only this one
+                group.delete(combatantId);
+                engagements.delete(combatantId);
+                combatantRoles.delete(combatantId);
+            }
+
+            showNotification('Disengaged');
+            updateButtons();
+        }
+
+        function clearEngagement(combatantId) {
+            const group = engagements.get(combatantId);
+            if (group) {
+                group.forEach(id => {
+                    engagements.delete(id);
+                    combatantRoles.delete(id);
+                });
+            }
+        }
+
+        function resetAll() {
+            const nonePhase = document.getElementById('phase-none');
+            document.querySelectorAll('.combatant-item').forEach(item => {
+                nonePhase.appendChild(item);
+            });
+            engagements.clear();
+            combatantRoles.clear();
+            updateButtons();
+            showNotification('All assignments reset');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // Initialize buttons
+        updateButtons();
+    </script>
+</body>
+</html>
+
